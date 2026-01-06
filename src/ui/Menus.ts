@@ -181,7 +181,7 @@ export class Menus {
       this.settingsMenu.style.display = "none";
       this.uiContainer.style.display = "flex";
 
-      if (this.mobileUi) {
+      if (this.mobileUi && this.game.renderer.getIsMobile()) {
         this.mobileUi.style.display = "block";
         document.documentElement.requestFullscreen().catch(() => {});
       }

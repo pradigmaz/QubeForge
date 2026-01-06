@@ -1,5 +1,5 @@
-import * as THREE from 'three';
-import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+import * as THREE from "three";
+import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 
 export class Renderer {
   public scene: THREE.Scene;
@@ -11,11 +11,13 @@ export class Renderer {
   private isMobile: boolean;
 
   constructor() {
-    this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-                    (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
-    
+    this.isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent,
+      );
+
     if (this.isMobile) {
-      document.body.classList.add('is-mobile');
+      document.body.classList.add("is-mobile");
     }
 
     // Main Scene
@@ -27,19 +29,31 @@ export class Renderer {
     this.uiScene = new THREE.Scene();
 
     // Main Camera
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    this.camera.rotation.order = 'YXZ';
+    this.camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000,
+    );
+    this.camera.rotation.order = "YXZ";
     this.camera.position.set(8, 20, 20);
     this.camera.lookAt(8, 8, 8);
 
     // UI Camera
-    this.uiCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    this.uiCamera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000,
+    );
     this.uiScene.add(this.uiCamera);
 
     // Renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: !this.isMobile });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.isMobile ? 1.5 : 2));
+    this.renderer.setPixelRatio(
+      Math.min(window.devicePixelRatio, this.isMobile ? 1.5 : 2),
+    );
     this.renderer.shadowMap.enabled = !this.isMobile;
     this.renderer.autoClear = false; // Manual clearing for overlay
     document.body.appendChild(this.renderer.domElement);
@@ -49,7 +63,7 @@ export class Renderer {
     this.scene.add(this.controls.object);
 
     // Window resize handler
-    window.addEventListener('resize', () => {
+    window.addEventListener("resize", () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
       this.camera.updateProjectionMatrix();
       this.uiCamera.aspect = window.innerWidth / window.innerHeight;
@@ -73,4 +87,3 @@ export class Renderer {
     this.renderer.render(this.scene, this.camera);
   }
 }
-
