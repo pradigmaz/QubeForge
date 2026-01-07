@@ -174,6 +174,7 @@ const blockInteraction = new BlockInteraction(
       slot.count = 0;
     }
     inventoryUI.refresh();
+    if (inventoryUI.onInventoryChange) inventoryUI.onInventoryChange();
     return true;
   },
   () => toggleInventory(true),
