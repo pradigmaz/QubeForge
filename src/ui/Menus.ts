@@ -10,6 +10,7 @@ export class Menus {
   private inventoryMenu: HTMLElement;
   private uiContainer: HTMLElement;
   private mobileUi: HTMLElement | null;
+  private bgVideo: HTMLVideoElement;
 
   // Buttons
   private btnNewGame: HTMLElement;
@@ -33,6 +34,7 @@ export class Menus {
     this.inventoryMenu = document.getElementById("inventory-menu")!;
     this.uiContainer = document.getElementById("ui-container")!;
     this.mobileUi = document.getElementById("mobile-ui");
+    this.bgVideo = document.getElementById("bg-video") as HTMLVideoElement;
 
     this.btnNewGame = document.getElementById("btn-new-game")!;
     this.btnContinue = document.getElementById(
@@ -116,6 +118,7 @@ export class Menus {
     this.settingsMenu.style.display = "none";
     this.inventoryMenu.style.display = "none";
     this.uiContainer.style.display = "none";
+    this.bgVideo.style.display = "block"; // Show video
 
     if (this.mobileUi) this.mobileUi.style.display = "none";
 
@@ -134,14 +137,14 @@ export class Menus {
       this.btnResume.style.pointerEvents = "none";
       this.btnResume.style.opacity = "0.5";
       const originalText = this.btnResume.innerText;
-      this.btnResume.innerText = "Wait...";
+      this.btnResume.innerText = "Ждите...";
 
       setTimeout(() => {
         // Only restore if we are still in the menu (though harmless if not)
         if (this.pauseMenu.style.display === "flex") {
           this.btnResume.style.pointerEvents = "auto";
           this.btnResume.style.opacity = "1";
-          this.btnResume.innerText = "Resume";
+          this.btnResume.innerText = "Продолжить";
         }
       }, 1300);
     }
@@ -191,8 +194,8 @@ export class Menus {
       this.game.renderer.controls.lock();
     }
 
-    this.btnNewGame.innerText = "Loading...";
-    this.btnContinue.innerText = "Loading...";
+    this.btnNewGame.innerText = "Загрузка...";
+    this.btnContinue.innerText = "Загрузка...";
 
     try {
       if (!loadSave) {
@@ -243,6 +246,7 @@ export class Menus {
       this.pauseMenu.style.display = "none";
       this.settingsMenu.style.display = "none";
       this.uiContainer.style.display = "flex";
+      this.bgVideo.style.display = "none"; // Hide video
 
       if (this.mobileUi && this.game.renderer.getIsMobile()) {
         this.mobileUi.style.display = "block";
@@ -254,8 +258,8 @@ export class Menus {
       if (!this.game.renderer.getIsMobile())
         this.game.renderer.controls.unlock();
     } finally {
-      this.btnNewGame.innerText = "New Game";
-      this.btnContinue.innerText = "Continue";
+      this.btnNewGame.innerText = "Новая Игра";
+      this.btnContinue.innerText = "Продолжить";
     }
   }
 }

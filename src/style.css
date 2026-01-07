@@ -1,9 +1,12 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
+
 body {
     margin: 0;
     overflow: hidden;
     user-select: none;
-    font-family: sans-serif;
+    font-family: "Press Start 2P", cursive;
 }
+
 canvas {
     display: block;
 }
@@ -369,6 +372,18 @@ canvas {
 }
 
 /* Minecraft Menus */
+#bg-video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    pointer-events: none;
+    background: #222; /* Fallback color */
+}
+
 #main-menu,
 #pause-menu,
 #settings-menu {
@@ -377,25 +392,46 @@ canvas {
     left: 0;
     width: 100%;
     height: 100%;
-    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAAXNSR0IArs4c6QAAACklEQVQImWNgQAYiIiL/QTSjBgMDIyMjAxKHiUGAgYGBAR0wMaADJgYAAD0CBAh7W1UAAAAASUVORK5CYII=")
-        repeat; /* Dirt texture pattern approximation */
-    background-color: #222;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    /* background-color removed */
+    /* backdrop-filter removed for clear video */
     z-index: 100;
     color: white;
     font-family: "Courier New", Courier, monospace;
     text-align: center;
 }
 
-#main-menu h1,
-#pause-menu h2,
-#settings-menu h2 {
-    font-size: 48px;
-    margin-bottom: 40px;
-    text-shadow: 4px 4px 0px #3f3f3f;
+/* Pause and Settings remain centered flex containers */
+#pause-menu,
+#settings-menu {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Main Menu uses relative/absolute positioning for custom layout */
+#main-menu {
+    display: block;
+}
+
+#game-logo {
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 600px;
+    height: auto;
+    filter: drop-shadow(0px 0px 10px rgba(0, 0, 0, 0.5));
+}
+
+#main-menu-buttons {
+    position: absolute;
+    bottom: 10%;
+    right: 10%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* Align buttons to the right edge of container */
 }
 
 .setting-item {
@@ -413,52 +449,60 @@ canvas {
     cursor: pointer;
 }
 
-.minecraft-btn {
-    width: 400px;
-    height: 40px;
-    margin: 10px;
-    background-color: #7d7d7d;
-    border: 2px solid #000;
-    border-top-color: #a0a0a0;
-    border-left-color: #a0a0a0;
-    border-bottom-color: #555;
-    border-right-color: #555;
+/* Import Pixel Font moved to top */
+.menu-btn {
+    /* Base: Steel */
+    background: #455a64;
     color: #fff;
-    font-family: "Courier New", Courier, monospace;
-    font-size: 20px;
+    border: 4px solid #263238;
+    padding: 10px 20px;
+    font-family: "Press Start 2P", cursive;
+    font-size: 16px; /* Adjusted for wider font */
+    text-transform: uppercase;
     cursor: pointer;
-    text-shadow: 2px 2px 0px #3f3f3f;
+    position: relative;
+    transition: all 0.1s ease;
+    width: 300px;
+    height: auto;
+    margin: 10px;
+    margin-bottom: 20px; /* Extra space for the shadow */
+    box-sizing: border-box;
+
+    /* 3D Volume Effect */
     box-shadow:
-        inset -2px -2px 0px #555,
-        inset 2px 2px 0px #a0a0a0;
+        0 8px 0 #263238,
+        /* Bottom "3D" face */ 0 12px 20px rgba(0, 0, 0, 0.4); /* Drop shadow */
+
+    /* Remove default rounded corners from previous step */
+    border-radius: 0;
 }
 
-.minecraft-btn:hover {
-    background-color: #8f8f8f;
-    border-top-color: #b4b4b4;
-    border-left-color: #b4b4b4;
-    color: #ffffa0;
+/* Hover: Hot Metal Effect */
+.menu-btn:hover {
+    background: #546e7a;
+    border-color: #ff6f00; /* Amber/Orange Glow */
+    transform: translateY(-2px);
+    box-shadow:
+        0 10px 0 #bf360c,
+        /* Darker Orange Shadow */ 0 15px 25px rgba(0, 0, 0, 0.5);
+    color: #fff;
 }
 
-.minecraft-btn:active {
-    background-color: #5c5c5c;
-    border-top-color: #444;
-    border-left-color: #444;
-    border-bottom-color: #888;
-    border-right-color: #888;
-    box-shadow: inset 2px 2px 0px #333;
+/* Active: Pressed Down */
+.menu-btn:active {
+    transform: translateY(6px);
+    box-shadow:
+        0 2px 0 #bf360c,
+        0 5px 10px rgba(0, 0, 0, 0.4);
 }
 
-.minecraft-btn:disabled {
-    color: #888;
-    text-shadow: none;
+.menu-btn:disabled {
+    background: #37474f;
+    border-color: #263238;
+    color: #78909c;
+    box-shadow: 0 8px 0 #1c252a;
     cursor: not-allowed;
-    background-color: #333;
-    border-top-color: #444;
-    border-left-color: #444;
-    border-bottom-color: #222;
-    border-right-color: #222;
-    box-shadow: none;
+    transform: none;
 }
 
 /* Mobile Controls */
