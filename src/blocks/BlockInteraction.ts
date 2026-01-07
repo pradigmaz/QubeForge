@@ -27,6 +27,7 @@ export class BlockInteraction {
     blockId: number,
   ) => boolean;
   private onOpenCraftingTable?: () => void;
+  private onConsumeItem?: () => void;
 
   constructor(
     camera: PerspectiveCamera,
@@ -43,6 +44,7 @@ export class BlockInteraction {
     cursorMesh?: THREE.Mesh,
     crackMesh?: THREE.Mesh,
     getMobs?: () => Mob[],
+    onConsumeItem?: () => void
   ) {
     this.camera = camera;
     this.scene = scene;
@@ -53,10 +55,50 @@ export class BlockInteraction {
     this.cursorMesh = cursorMesh;
     this.crackMesh = crackMesh;
     this.getMobs = getMobs;
+    this.onConsumeItem = onConsumeItem;
     this.raycaster = new THREE.Raycaster();
   }
 
   public interact(world: World): void {
+    // 1. Check Item Usage (Broken Compass)
+    const slot = this.getSelectedSlotItem();
+    if (slot.id === BLOCK.BROKEN_COMPASS) {
+        // Random Teleport Logic
+        const playerPos = this.controls.object.position;
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 5 + Math.random() * 25; // 5 to 30 blocks away
+
+        const targetX = playerPos.x + Math.sin(angle) * dist;
+        const targetZ = playerPos.z + Math.cos(angle) * dist;
+
+        const tx = Math.floor(targetX);
+        const tz = Math.floor(targetZ);
+
+        // Find valid ground
+        let topY = world.getTopY(tx, tz);
+        
+        // If valid height found (and not void)
+        if (topY > 0) {
+             const targetY = topY + 3.0; // Drop from above to prevent sticking
+             
+             // Check if target is not too high/low compared to current?
+             // Not strictly required by prompt, but good practice.
+             // Prompt says "random place in radius 30".
+             
+             playerPos.set(tx + 0.5, targetY, tz + 0.5);
+             
+             // Reset velocity to prevent fall damage or momentum
+             if ((this.controls as any).velocity) (this.controls as any).velocity.set(0,0,0);
+
+             // Consume Item
+             if (this.onConsumeItem) this.onConsumeItem();
+             
+             return; // Stop interaction
+        }
+        // If no valid ground found (void), do nothing (waste use? or prevent use?)
+        // Let's prevent use if invalid target.
+    }
+
     this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
     const intersects = this.raycaster.intersectObjects(this.scene.children);
     const hit = intersects.find(

@@ -7,6 +7,7 @@ export class PlayerHand {
   private camera: THREE.Camera;
   private handGroup: THREE.Group;
   private currentMesh: THREE.Mesh | null = null;
+  private needleMesh: THREE.Mesh | null = null;
   private currentId: number = 0;
 
   // Animation State
@@ -48,6 +49,7 @@ export class PlayerHand {
     if (id === BLOCK.WOODEN_SHOVEL) return TOOL_DEFS.WOODEN_SHOVEL;
     if (id === BLOCK.STONE_SHOVEL) return TOOL_DEFS.STONE_SHOVEL;
     if (id === BLOCK.STICK) return TOOL_DEFS.STICK;
+    if (id === BLOCK.BROKEN_COMPASS) return TOOL_DEFS.BROKEN_COMPASS;
     return null;
   }
 
@@ -268,6 +270,13 @@ export class PlayerHand {
       }
       this.currentMesh = null;
     }
+    
+    if (this.needleMesh) {
+        // needleMesh is child of currentMesh usually, but let's be safe
+        this.needleMesh.geometry.dispose();
+        (this.needleMesh.material as THREE.Material).dispose();
+        this.needleMesh = null;
+    }
 
     if (id === 0) return; // Air
 
@@ -284,6 +293,20 @@ export class PlayerHand {
 
       this.currentMesh.scale.set(1.5, 1.5, 1.5);
       this.currentMesh.position.set(0, 0.2, 0);
+
+      // Add Spinning Needle for Broken Compass
+      if (id === BLOCK.BROKEN_COMPASS) {
+          const needleGeo = new THREE.BoxGeometry(0.1, 0.4, 0.05); // Thin red needle
+          const needleMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+          this.needleMesh = new THREE.Mesh(needleGeo, needleMat);
+          
+          // Position slightly in front of the tool face
+          // Tool pattern is centered. Tool mesh local Z+ is "Front".
+          // Depth is 0.04 (pixelSize). Half depth is 0.02.
+          // Place needle at z = -0.1 to be visible outside (facing player)
+          this.needleMesh.position.set(0, 0, -0.1);
+          this.currentMesh.add(this.needleMesh);
+      }
     } else {
       // Block
       const geo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
@@ -417,6 +440,11 @@ export class PlayerHand {
   }
 
   public update(delta: number, isMoving: boolean) {
+    // Spin Needle
+    if (this.needleMesh) {
+        this.needleMesh.rotation.z += delta * 20 + Math.random() * 5;
+    }
+
     // Bobbing
     if (isMoving) {
       this.bobTime += delta * 10;

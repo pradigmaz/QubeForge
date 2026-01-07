@@ -101,11 +101,33 @@ const STICK_PATTERN = [
   "0000000000000000",
 ];
 
+const COMPASS_PATTERN = [
+  "0000004444000000",
+  "0000442222440000",
+  "0004222222224000",
+  "0042222332222400",
+  "0422223333222240",
+  "0422222332222240",
+  "4222222332222224",
+  "4222222332222224",
+  "4222222332222224",
+  "4222222332222224",
+  "0422222332222240",
+  "0422222332222240",
+  "0042222222222400",
+  "0004222222224000",
+  "0000442222440000",
+  "0000004444000000",
+];
+
 // Colors
 const COLORS = {
   HANDLE: "#5C4033", // Dark Brown
   WOOD: "#8B5A2B", // Wood Planks Color
   STONE: "#7d7d7d", // Stone Color
+  SILVER: "#C0C0C0", // Compass Case
+  RED: "#FF0000", // Needle
+  BLACK: "#000000", // Border
 };
 
 export interface GeneratedTexture {
@@ -138,6 +160,10 @@ export function generateToolTexture(
         ctx.fillStyle = COLORS.HANDLE;
       } else if (pixel === "2") {
         ctx.fillStyle = materialColor;
+      } else if (pixel === "3") {
+        ctx.fillStyle = COLORS.RED;
+      } else if (pixel === "4") {
+        ctx.fillStyle = COLORS.BLACK;
       }
 
       ctx.fillRect(x * scale, y * scale, scale, scale);
@@ -211,6 +237,7 @@ export const TOOL_DEFS = {
   STONE_AXE: { pattern: AXE_PATTERN, color: COLORS.STONE },
   WOODEN_SHOVEL: { pattern: SHOVEL_PATTERN, color: COLORS.WOOD },
   STONE_SHOVEL: { pattern: SHOVEL_PATTERN, color: COLORS.STONE },
+  BROKEN_COMPASS: { pattern: COMPASS_PATTERN, color: COLORS.SILVER },
 };
 
 // Tool Textures Registry
@@ -264,6 +291,11 @@ export function initToolTextures() {
     TOOL_TEXTURES[BLOCK.STONE_SHOVEL] = generateToolTexture(
       TOOL_DEFS.STONE_SHOVEL.pattern,
       TOOL_DEFS.STONE_SHOVEL.color,
+    );
+
+    TOOL_TEXTURES[BLOCK.BROKEN_COMPASS] = generateToolTexture(
+      TOOL_DEFS.BROKEN_COMPASS.pattern,
+      TOOL_DEFS.BROKEN_COMPASS.color,
     );
 
     // Generate Crafting Table Icon
