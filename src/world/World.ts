@@ -33,6 +33,7 @@ type Chunk = {
 export class World {
   private scene: THREE.Scene;
   private chunkSize: number = 32;
+  private chunkHeight: number = 128;
 
   // Visuals
   private chunks: Map<string, Chunk> = new Map();
@@ -399,7 +400,7 @@ export class World {
     const localZ = z - cz * this.chunkSize;
     const localY = y;
 
-    if (localY < 0 || localY >= this.chunkSize) return false;
+    if (localY < 0 || localY >= this.chunkHeight) return false;
 
     const index = this.getBlockIndex(localX, localY, localZ);
     return data[index] !== BLOCK.AIR;
@@ -474,7 +475,7 @@ export class World {
     const localZ = z - cz * this.chunkSize;
     const localY = y;
 
-    if (localY < 0 || localY >= this.chunkSize) return 0;
+    if (localY < 0 || localY >= this.chunkHeight) return 0;
 
     const index = this.getBlockIndex(localX, localY, localZ);
     return data[index];
@@ -492,7 +493,7 @@ export class World {
     const localZ = z - cz * this.chunkSize;
     const localY = y;
 
-    if (localY < 0 || localY >= this.chunkSize) return;
+    if (localY < 0 || localY >= this.chunkHeight) return;
 
     const index = this.getBlockIndex(localX, localY, localZ);
     data[index] = type;
@@ -526,7 +527,7 @@ export class World {
   }
 
   private getBlockIndex(x: number, y: number, z: number): number {
-    return x + y * this.chunkSize + z * this.chunkSize * this.chunkSize;
+    return x + y * this.chunkSize + z * this.chunkSize * this.chunkHeight;
   }
 
   private placeTree(
@@ -540,7 +541,7 @@ export class World {
     // Trunk
     for (let y = 0; y < trunkHeight; y++) {
       const currentY = startY + y;
-      if (currentY < this.chunkSize) {
+      if (currentY < this.chunkHeight) {
         const index = this.getBlockIndex(startX, currentY, startZ);
         data[index] = BLOCK.WOOD;
       }
@@ -571,7 +572,7 @@ export class World {
             x >= 0 &&
             x < this.chunkSize &&
             y >= 0 &&
-            y < this.chunkSize &&
+            y < this.chunkHeight &&
             z >= 0 &&
             z < this.chunkSize
           ) {
@@ -589,7 +590,7 @@ export class World {
   private generateChunk(cx: number, cz: number) {
     const key = `${cx},${cz}`;
     const data = new Uint8Array(
-      this.chunkSize * this.chunkSize * this.chunkSize,
+      this.chunkSize * this.chunkSize * this.chunkHeight,
     );
     const startX = cx * this.chunkSize;
     const startZ = cz * this.chunkSize;
@@ -608,7 +609,7 @@ export class World {
         let height = Math.floor(noiseValue * this.TERRAIN_HEIGHT) + 20;
 
         if (height < 1) height = 1;
-        if (height >= this.chunkSize) height = this.chunkSize - 1;
+        if (height >= this.chunkHeight) height = this.chunkHeight - 1;
 
         for (let y = 0; y <= height; y++) {
           let type = BLOCK.STONE;
@@ -636,7 +637,7 @@ export class World {
 
         // Find surface height
         let height = -1;
-        for (let y = this.chunkSize - 1; y >= 0; y--) {
+        for (let y = this.chunkHeight - 1; y >= 0; y--) {
           if (data[this.getBlockIndex(x, y, z)] !== BLOCK.AIR) {
             height = y;
             break;
@@ -837,7 +838,7 @@ export class World {
 
     // Iterate
     for (let x = 0; x < this.chunkSize; x++) {
-      for (let y = 0; y < this.chunkSize; y++) {
+      for (let y = 0; y < this.chunkHeight; y++) {
         for (let z = 0; z < this.chunkSize; z++) {
           const index = this.getBlockIndex(x, y, z);
           const type = data[index];
@@ -859,7 +860,7 @@ export class World {
             // Actually, `y` passed here is local (0-15).
 
             // If Y is out of vertical bounds (0-15), assume transparent (sky/void)
-            if (gy < 0 || gy >= this.chunkSize) return true;
+            if (gy < 0 || gy >= this.chunkHeight) return true;
 
             // Determine which chunk this neighbor belongs to
             const ncx = Math.floor(gx / this.chunkSize);

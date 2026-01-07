@@ -3,7 +3,10 @@ export class DB {
   private storeName: string;
   private db: IDBDatabase | null = null;
 
-  constructor(dbName: string = 'minecraft-world', storeName: string = 'chunks') {
+  constructor(
+    dbName: string = "minecraft-world-tall",
+    storeName: string = "chunks",
+  ) {
     this.dbName = dbName;
     this.storeName = storeName;
   }
@@ -23,17 +26,21 @@ export class DB {
         if (!db.objectStoreNames.contains(this.storeName)) {
           db.createObjectStore(this.storeName);
         }
-        if (!db.objectStoreNames.contains('meta')) {
-            db.createObjectStore('meta');
+        if (!db.objectStoreNames.contains("meta")) {
+          db.createObjectStore("meta");
         }
       };
     });
   }
 
-  async set(key: string, value: any, store: string = this.storeName): Promise<void> {
+  async set(
+    key: string,
+    value: any,
+    store: string = this.storeName,
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (!this.db) return reject('DB not initialized');
-      const transaction = this.db.transaction([store], 'readwrite');
+      if (!this.db) return reject("DB not initialized");
+      const transaction = this.db.transaction([store], "readwrite");
       const objectStore = transaction.objectStore(store);
       const request = objectStore.put(value, key);
 
@@ -44,8 +51,8 @@ export class DB {
 
   async get(key: string, store: string = this.storeName): Promise<any> {
     return new Promise((resolve, reject) => {
-      if (!this.db) return reject('DB not initialized');
-      const transaction = this.db.transaction([store], 'readonly');
+      if (!this.db) return reject("DB not initialized");
+      const transaction = this.db.transaction([store], "readonly");
       const objectStore = transaction.objectStore(store);
       const request = objectStore.get(key);
 
@@ -53,41 +60,44 @@ export class DB {
       request.onsuccess = () => resolve(request.result);
     });
   }
-  
+
   async delete(key: string, store: string = this.storeName): Promise<void> {
     return new Promise((resolve, reject) => {
-        if (!this.db) return reject('DB not initialized');
-        const transaction = this.db.transaction([store], 'readwrite');
-        const objectStore = transaction.objectStore(store);
-        const request = objectStore.delete(key);
-  
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve();
+      if (!this.db) return reject("DB not initialized");
+      const transaction = this.db.transaction([store], "readwrite");
+      const objectStore = transaction.objectStore(store);
+      const request = objectStore.delete(key);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve();
     });
   }
 
   async keys(store: string = this.storeName): Promise<IDBValidKey[]> {
-      return new Promise((resolve, reject) => {
-          if (!this.db) return reject('DB not initialized');
-          const transaction = this.db.transaction([store], 'readonly');
-          const objectStore = transaction.objectStore(store);
-          const request = objectStore.getAllKeys();
+    return new Promise((resolve, reject) => {
+      if (!this.db) return reject("DB not initialized");
+      const transaction = this.db.transaction([store], "readonly");
+      const objectStore = transaction.objectStore(store);
+      const request = objectStore.getAllKeys();
 
-          request.onerror = () => reject(request.error);
-          request.onsuccess = () => resolve(request.result);
-      });
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
   }
 
   async clear(): Promise<void> {
     return new Promise((resolve, reject) => {
-        if (!this.db) return reject('DB not initialized');
-        const transaction = this.db.transaction([this.storeName, 'meta'], 'readwrite');
-        
-        transaction.onerror = () => reject(transaction.error);
-        transaction.oncomplete = () => resolve();
+      if (!this.db) return reject("DB not initialized");
+      const transaction = this.db.transaction(
+        [this.storeName, "meta"],
+        "readwrite",
+      );
 
-        transaction.objectStore(this.storeName).clear();
-        transaction.objectStore('meta').clear();
+      transaction.onerror = () => reject(transaction.error);
+      transaction.oncomplete = () => resolve();
+
+      transaction.objectStore(this.storeName).clear();
+      transaction.objectStore("meta").clear();
     });
   }
 }
