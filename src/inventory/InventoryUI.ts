@@ -238,15 +238,29 @@ export class InventoryUI {
           draggedItem = null;
         }
       } else if (slot.id === draggedItem.id) {
-        if (button === 2) {
-          // Add One
-          slot.count++;
-          draggedItem.count--;
-          if (draggedItem.count === 0) draggedItem = null;
+        const isTool = slot.id >= 20;
+        const maxStack = isTool ? 1 : 64;
+
+        if (slot.count >= maxStack) {
+          // Stack full (or tool), Swap
+          const temp = { ...slot };
+          slot.id = draggedItem.id;
+          slot.count = draggedItem.count;
+          draggedItem = temp;
         } else {
-          // Add All
-          slot.count += draggedItem.count;
-          draggedItem = null;
+          if (button === 2) {
+            // Add One
+            slot.count++;
+            draggedItem.count--;
+            if (draggedItem.count === 0) draggedItem = null;
+          } else {
+            // Add All (respect limit)
+            const space = maxStack - slot.count;
+            const move = Math.min(space, draggedItem.count);
+            slot.count += move;
+            draggedItem.count -= move;
+            if (draggedItem.count === 0) draggedItem = null;
+          }
         }
       } else {
         // Swap

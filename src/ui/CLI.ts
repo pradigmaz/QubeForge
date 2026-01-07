@@ -65,12 +65,12 @@ export class CLI {
       // Better: let main.ts or Game handle the locking logic based on state?
       // Or we check Game state here.
 
-      const isInventoryOpen = this.game.inventoryMenu?.style.display === 'flex'; // Hacky? InventoryUI should expose this.
+      const isInventoryOpen = this.game.inventoryMenu?.style.display === "flex"; // Hacky? InventoryUI should expose this.
       // Let's stick to what we know. InventoryUI is in Game.
       // We'll check standard conditions.
 
       if (!this.game.gameState.getPaused() && !isInventoryOpen) {
-          this.game.renderer.controls.lock();
+        this.game.renderer.controls.lock();
       }
     }
   }
@@ -95,7 +95,9 @@ export class CLI {
       }
 
       const itemName = args[0].toLowerCase();
-      const amount = parseInt(args[1]) || 1;
+      let amount = parseInt(args[1]) || 1;
+      if (amount < 1) amount = 1;
+      if (amount > 64) amount = 64;
 
       // Find block ID by name
       let targetId = 0;
@@ -110,9 +112,20 @@ export class CLI {
       }
 
       if (targetId !== 0) {
-        this.game.inventory.addItem(targetId, amount);
+        const remaining = this.game.inventory.addItem(targetId, amount);
         this.game.inventoryUI.refresh();
-        // this.game.hotbarLabel.show(...) // Need to add this
+
+        if (remaining > 0) {
+          if (remaining === amount) {
+            console.log("Error: Inventory full. Could not add items.");
+          } else {
+            console.log(
+              `Warning: Inventory almost full. Added ${amount - remaining} of ${amount} items.`,
+            );
+          }
+        } else {
+          console.log(`Gave ${amount} ${itemName}`);
+        }
       } else {
         // this.game.hotbarLabel.show(...)
         console.log(`Unknown item: ${itemName}`);

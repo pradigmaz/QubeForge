@@ -170,7 +170,7 @@ export class Game {
       ) {
         // Pickup logic
         const added = this.inventory.addItem(entity.type, 1);
-        if (added) {
+        if (added === 0) {
           entity.dispose();
           this.entities.splice(i, 1);
           this.inventoryUI.refresh();

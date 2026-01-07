@@ -12,7 +12,10 @@ export class Inventory {
   private readonly HOTBAR_SIZE = 9;
 
   constructor() {
-    this.slots = Array.from({ length: this.SLOT_COUNT }, () => ({ id: 0, count: 0 }));
+    this.slots = Array.from({ length: this.SLOT_COUNT }, () => ({
+      id: 0,
+      count: 0,
+    }));
   }
 
   public getSlots(): InventorySlot[] {
@@ -41,25 +44,36 @@ export class Inventory {
     return this.slots[this.selectedSlot];
   }
 
-  public addItem(id: number, count: number): boolean {
-    // 1. Try to stack with existing items
-    for (let i = 0; i < this.SLOT_COUNT; i++) {
-      if (this.slots[i].id === id) {
-        this.slots[i].count += count;
-        return true;
+  public addItem(id: number, count: number): number {
+    let remaining = count;
+    const isTool = id >= 20;
+    const maxStack = isTool ? 1 : 64;
+
+    // 1. Try to stack with existing items (ONLY if not a tool)
+    if (!isTool) {
+      for (let i = 0; i < this.SLOT_COUNT; i++) {
+        if (this.slots[i].id === id && this.slots[i].count < maxStack) {
+          const space = maxStack - this.slots[i].count;
+          const add = Math.min(remaining, space);
+          this.slots[i].count += add;
+          remaining -= add;
+          if (remaining === 0) return 0;
+        }
       }
     }
 
     // 2. Find empty slot
     for (let i = 0; i < this.SLOT_COUNT; i++) {
       if (this.slots[i].id === 0) {
+        const add = Math.min(remaining, maxStack);
         this.slots[i].id = id;
-        this.slots[i].count = count;
-        return true;
+        this.slots[i].count = add;
+        remaining -= add;
+        if (remaining === 0) return 0;
       }
     }
 
-    return false; // Inventory full
+    return remaining; // Return items that didn't fit
   }
 
   public removeItem(id: number, count: number): boolean {
@@ -85,7 +99,7 @@ export class Inventory {
   }
 
   public serialize(): InventorySlot[] {
-    return this.slots.map(slot => ({ ...slot }));
+    return this.slots.map((slot) => ({ ...slot }));
   }
 
   public deserialize(data: InventorySlot[]): void {
@@ -96,4 +110,3 @@ export class Inventory {
     }
   }
 }
-
