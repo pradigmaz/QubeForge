@@ -167,7 +167,7 @@ export class BlockBreaking {
     if (hit && hit.distance < 6) {
       const p = hit.point
         .clone()
-        .add(this.raycaster.ray.direction.clone().multiplyScalar(0.1));
+        .add(this.raycaster.ray.direction.clone().multiplyScalar(0.01));
       const x = Math.floor(p.x);
       const y = Math.floor(p.y);
       const z = Math.floor(p.z);
