@@ -50,6 +50,8 @@ export class PlayerHand {
     if (id === BLOCK.STONE_SHOVEL) return TOOL_DEFS.STONE_SHOVEL;
     if (id === BLOCK.STICK) return TOOL_DEFS.STICK;
     if (id === BLOCK.BROKEN_COMPASS) return TOOL_DEFS.BROKEN_COMPASS;
+    if (id === BLOCK.COAL) return TOOL_DEFS.COAL;
+    if (id === BLOCK.IRON_INGOT) return TOOL_DEFS.IRON_INGOT;
     return null;
   }
 
@@ -270,12 +272,12 @@ export class PlayerHand {
       }
       this.currentMesh = null;
     }
-    
+
     if (this.needleMesh) {
-        // needleMesh is child of currentMesh usually, but let's be safe
-        this.needleMesh.geometry.dispose();
-        (this.needleMesh.material as THREE.Material).dispose();
-        this.needleMesh = null;
+      // needleMesh is child of currentMesh usually, but let's be safe
+      this.needleMesh.geometry.dispose();
+      (this.needleMesh.material as THREE.Material).dispose();
+      this.needleMesh = null;
     }
 
     if (id === 0) return; // Air
@@ -296,24 +298,24 @@ export class PlayerHand {
 
       // Add Spinning Needle for Broken Compass
       if (id === BLOCK.BROKEN_COMPASS) {
-          const needleGeo = new THREE.BoxGeometry(0.1, 0.4, 0.05); // Thin red needle
-          const needleMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-          this.needleMesh = new THREE.Mesh(needleGeo, needleMat);
-          
-          // Position slightly in front of the tool face
-          // Tool pattern is centered. Tool mesh local Z+ is "Front".
-          // Depth is 0.04 (pixelSize). Half depth is 0.02.
-          // Place needle at z = -0.1 to be visible outside (facing player)
-          this.needleMesh.position.set(0, 0, -0.1);
-          this.currentMesh.add(this.needleMesh);
+        const needleGeo = new THREE.BoxGeometry(0.1, 0.4, 0.05); // Thin red needle
+        const needleMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        this.needleMesh = new THREE.Mesh(needleGeo, needleMat);
+
+        // Position slightly in front of the tool face
+        // Tool pattern is centered. Tool mesh local Z+ is "Front".
+        // Depth is 0.04 (pixelSize). Half depth is 0.02.
+        // Place needle at z = -0.1 to be visible outside (facing player)
+        this.needleMesh.position.set(0, 0, -0.1);
+        this.currentMesh.add(this.needleMesh);
       }
     } else {
       // Block
       const geo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
 
       // UV Logic
-      // Atlas: 6 Columns
-      const uvStep = 1.0 / 6.0;
+      // Atlas: 8 Columns
+      const uvStep = 1.0 / 8.0;
       const uvInset = 0.001;
 
       const getRange = (idx: number) => {
@@ -337,6 +339,10 @@ export class PlayerHand {
           else if (face === 3)
             texIdx = 5; // Bottom
           else texIdx = 4; // Side
+        } else if (id === BLOCK.COAL_ORE) {
+          texIdx = 6;
+        } else if (id === BLOCK.IRON_ORE) {
+          texIdx = 7;
         }
 
         const { min, max } = getRange(texIdx);
@@ -384,6 +390,10 @@ export class PlayerHand {
         r = 0.4;
         g = 0.2;
         b = 0.0;
+      } else if (id === BLOCK.COAL_ORE || id === BLOCK.IRON_ORE) {
+        r = 1.0;
+        g = 1.0;
+        b = 1.0; // Texture has colors
       }
       // Crafting Table uses white (texture colors)
 
@@ -442,7 +452,7 @@ export class PlayerHand {
   public update(delta: number, isMoving: boolean) {
     // Spin Needle
     if (this.needleMesh) {
-        this.needleMesh.rotation.z += delta * 20 + Math.random() * 5;
+      this.needleMesh.rotation.z += delta * 20 + Math.random() * 5;
     }
 
     // Bobbing

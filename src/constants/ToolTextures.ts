@@ -120,14 +120,54 @@ const COMPASS_PATTERN = [
   "0000004444000000",
 ];
 
+const COAL_PATTERN = [
+  "0000000000000000",
+  "0000000000000000",
+  "0000000222200000",
+  "0000002222220000",
+  "0000022222222000",
+  "0000022222222000",
+  "0000222222222000",
+  "0000222222222200",
+  "0000022222222200",
+  "0000002222222000",
+  "0000000222220000",
+  "0000000022200000",
+  "0000000000000000",
+  "0000000000000000",
+  "0000000000000000",
+  "0000000000000000",
+];
+
+const INGOT_PATTERN = [
+  "0000000000000000",
+  "0000000000000000",
+  "0000000000000000",
+  "0000000222222000",
+  "0000002222222200",
+  "0000022222222220",
+  "0000022222222220",
+  "0000022222222220",
+  "0000002222222200",
+  "0000000222222000",
+  "0000000000000000",
+  "0000000000000000",
+  "0000000000000000",
+  "0000000000000000",
+  "0000000000000000",
+  "0000000000000000",
+];
+
 // Colors
 const COLORS = {
   HANDLE: "#5C4033", // Dark Brown
   WOOD: "#8B5A2B", // Wood Planks Color
   STONE: "#7d7d7d", // Stone Color
-  SILVER: "#C0C0C0", // Compass Case
+  SILVER: "#C0C0C0", // Compass Case & Iron
   RED: "#FF0000", // Needle
   BLACK: "#000000", // Border
+  COAL: "#2A2A2A", // Coal Color
+  IRON: "#E6E6E6", // Iron Ingot Color (Lighter than Silver)
 };
 
 export interface GeneratedTexture {
@@ -238,6 +278,8 @@ export const TOOL_DEFS = {
   WOODEN_SHOVEL: { pattern: SHOVEL_PATTERN, color: COLORS.WOOD },
   STONE_SHOVEL: { pattern: SHOVEL_PATTERN, color: COLORS.STONE },
   BROKEN_COMPASS: { pattern: COMPASS_PATTERN, color: COLORS.SILVER },
+  COAL: { pattern: COAL_PATTERN, color: COLORS.COAL },
+  IRON_INGOT: { pattern: INGOT_PATTERN, color: COLORS.IRON },
 };
 
 // Tool Textures Registry
@@ -298,6 +340,16 @@ export function initToolTextures() {
       TOOL_DEFS.BROKEN_COMPASS.color,
     );
 
+    TOOL_TEXTURES[BLOCK.COAL] = generateToolTexture(
+      TOOL_DEFS.COAL.pattern,
+      TOOL_DEFS.COAL.color,
+    );
+
+    TOOL_TEXTURES[BLOCK.IRON_INGOT] = generateToolTexture(
+      TOOL_DEFS.IRON_INGOT.pattern,
+      TOOL_DEFS.IRON_INGOT.color,
+    );
+
     // Generate Crafting Table Icon
     if (
       BLOCK_DEFS.CRAFTING_TABLE_TOP &&
@@ -307,6 +359,20 @@ export function initToolTextures() {
       TOOL_TEXTURES[BLOCK.CRAFTING_TABLE] = generateBlockIcon(
         BLOCK_DEFS.CRAFTING_TABLE_TOP.pattern,
         BLOCK_DEFS.CRAFTING_TABLE_TOP.colors,
+      );
+    }
+
+    // Generate Ore Icons
+    if (BLOCK_DEFS.COAL_ORE) {
+      TOOL_TEXTURES[BLOCK.COAL_ORE] = generateBlockIcon(
+        BLOCK_DEFS.COAL_ORE.pattern,
+        BLOCK_DEFS.COAL_ORE.colors,
+      );
+    }
+    if (BLOCK_DEFS.IRON_ORE) {
+      TOOL_TEXTURES[BLOCK.IRON_ORE] = generateBlockIcon(
+        BLOCK_DEFS.IRON_ORE.pattern,
+        BLOCK_DEFS.IRON_ORE.colors,
       );
     }
 

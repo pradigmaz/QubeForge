@@ -79,4 +79,12 @@ export const RECIPES: Recipe[] = [
     pattern: ["C", "S", "S"],
     keys: { C: BLOCK.STONE, S: BLOCK.STICK },
   },
+  // --- RESOURCES ---
+  {
+    result: { id: BLOCK.IRON_INGOT, count: 1 },
+    ingredients: [
+      { id: BLOCK.IRON_ORE, count: 1 },
+      { id: BLOCK.COAL, count: 1 },
+    ],
+  },
 ];

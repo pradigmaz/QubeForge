@@ -1,6 +1,6 @@
 import { Renderer } from "./core/Renderer";
 import { GameState } from "./core/GameState";
-import { World } from "./world/World";
+import { World, BLOCK } from "./world/World";
 import { ItemEntity } from "./entities/ItemEntity";
 import { initToolTextures, TOOL_TEXTURES } from "./constants/ToolTextures";
 import { MobManager } from "./mobs/MobManager";
@@ -71,24 +71,53 @@ const blockBreaking = new BlockBreaking(
   controls,
   () => inventory.getSelectedSlotItem().id,
   (x, y, z, id) => {
-    // Drop Item
+    // Drop Item Logic
     if (id !== 0) {
-      let toolTexture = null;
-      if (TOOL_TEXTURES[id] && (id >= 20 || id === 8)) {
-        toolTexture = TOOL_TEXTURES[id].texture;
+      const toolId = inventory.getSelectedSlotItem().id;
+      let shouldDrop = true;
+      let dropId = id;
+
+      // Drop Rules
+      if (id === BLOCK.STONE) {
+        // Stone: Only drops with Pickaxes
+        if (toolId !== BLOCK.WOODEN_PICKAXE && toolId !== BLOCK.STONE_PICKAXE) {
+          shouldDrop = false;
+        }
+      } else if (id === BLOCK.IRON_ORE) {
+        // Iron Ore: Only drops with Stone Pickaxe (or better)
+        if (toolId !== BLOCK.STONE_PICKAXE) {
+          shouldDrop = false;
+        }
+      } else if (id === BLOCK.COAL_ORE) {
+        // Coal Ore: Drops with Wooden or Stone Pickaxe
+        if (toolId !== BLOCK.WOODEN_PICKAXE && toolId !== BLOCK.STONE_PICKAXE) {
+          shouldDrop = false;
+        } else {
+          dropId = BLOCK.COAL; // Drop Coal item
+        }
       }
-      entities.push(
-        new ItemEntity(
-          world,
-          scene,
-          x,
-          y,
-          z,
-          id,
-          world.noiseTexture,
-          toolTexture,
-        ),
-      );
+
+      if (shouldDrop) {
+        let toolTexture = null;
+        if (
+          TOOL_TEXTURES[dropId] &&
+          (dropId >= 20 || dropId === 8 || dropId === 12 || dropId === 13)
+        ) {
+          toolTexture = TOOL_TEXTURES[dropId].texture;
+        }
+        entities.push(
+          new ItemEntity(
+            world,
+            scene,
+            x,
+            y,
+            z,
+            dropId,
+            world.noiseTexture,
+            toolTexture,
+          ),
+        );
+      }
     }
     world.setBlock(x, y, z, 0); // AIR
   },

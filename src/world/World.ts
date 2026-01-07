@@ -15,6 +15,10 @@ export const BLOCK = {
   PLANKS: 7,
   STICK: 8,
   CRAFTING_TABLE: 9,
+  COAL_ORE: 10,
+  IRON_ORE: 11,
+  COAL: 12,
+  IRON_INGOT: 13,
   WOODEN_SWORD: 20,
   STONE_SWORD: 21,
   WOODEN_PICKAXE: 22,
@@ -223,7 +227,7 @@ export class World {
   // --- Core Logic ---
 
   private createNoiseTexture(): THREE.DataTexture {
-    const width = 96; // 16 * 6 (Noise, Leaves, Planks, CT_Top, CT_Side, CT_Bottom)
+    const width = 128; // 16 * 8
     const height = 16;
     const data = new Uint8Array(width * height * 4); // RGBA
 
@@ -256,7 +260,7 @@ export class World {
           data[stride + 1] = 100;
           data[stride + 2] = 100;
         }
-      } else if (x >= 48) {
+      } else if (x >= 48 && x < 96) {
         // Crafting Table Slots (48-64: Top, 64-80: Side, 80-96: Bottom)
         const localX = x % 16;
 
@@ -292,9 +296,38 @@ export class World {
           data[stride + 1] = rgb.g;
           data[stride + 2] = rgb.b;
         }
+      } else if (x >= 96) {
+        // Ores (96-112: Coal, 112-128: Iron)
+        const localX = x % 16;
+        let def = null;
+        if (x < 112) def = BLOCK_DEFS.COAL_ORE;
+        else def = BLOCK_DEFS.IRON_ORE;
+
+        if (def && def.pattern && def.colors) {
+          const char = def.pattern[y][localX];
+
+          if (char === "2") {
+            // Secondary (Base) -> Match Stone appearance
+            // Stone gets noise v (150-255) multiplied by vertex color 0.5 -> ~75-127
+            // Here vertex color is 1.0, so we must output ~75-127 directly in texture.
+
+            // Generate noise similar to base
+            const noiseV = Math.floor(Math.random() * (255 - 150) + 150);
+            const stoneV = Math.floor(noiseV * 0.5);
+
+            data[stride] = stoneV;
+            data[stride + 1] = stoneV;
+            data[stride + 2] = stoneV;
+          } else {
+            // Primary (Spot)
+            const rgb = hexToRgb(def.colors.primary);
+            data[stride] = rgb.r;
+            data[stride + 1] = rgb.g;
+            data[stride + 2] = rgb.b;
+          }
+        }
       }
     }
-
     const texture = new THREE.DataTexture(
       data,
       width,
@@ -434,60 +467,62 @@ export class World {
   }
 
   public getBreakTime(blockType: number, toolId: number = 0): number {
-    let baseTime = 1000;
+    // Default fallback
+    let time = 1000;
 
-    // Base times
     switch (blockType) {
-      case BLOCK.LEAVES:
-        baseTime = 500;
-        break; // Faster leaves
-      case BLOCK.DIRT:
       case BLOCK.GRASS:
-        baseTime = 1000;
-        break; // Shovel territory (not imp yet)
+      case BLOCK.DIRT:
+        if (toolId === BLOCK.STONE_SHOVEL) time = 200;
+        else if (toolId === BLOCK.WOODEN_SHOVEL) time = 400;
+        else time = 750;
+        break;
+
+      case BLOCK.STONE:
+        if (toolId === BLOCK.STONE_PICKAXE) time = 600;
+        else if (toolId === BLOCK.WOODEN_PICKAXE) time = 1150;
+        else time = 7500;
+        break;
+
+      case BLOCK.IRON_ORE:
+        if (toolId === BLOCK.STONE_PICKAXE) time = 1150;
+        else if (toolId === BLOCK.WOODEN_PICKAXE) time = 7500;
+        else time = 15000;
+        break;
+
+      case BLOCK.COAL_ORE:
+        if (toolId === BLOCK.STONE_PICKAXE) time = 1150;
+        else if (toolId === BLOCK.WOODEN_PICKAXE) time = 2250;
+        else time = 15000;
+        break;
+
+      case BLOCK.LEAVES:
+        time = 500;
+        break;
       case BLOCK.WOOD:
       case BLOCK.PLANKS:
-        baseTime = 3000;
+        // Keep existing logic for wood/planks (approx 3s base / multiplier)
+        // Or simplify. Let's keep a reasonable default for wood.
+        // Previous logic: Base 3000. Axe x2 (Wood/Stone?).
+        // Let's preserve roughly previous behavior for non-specified blocks.
+        // Wood/Planks: 3000 / multiplier.
+        let multiplier = 1;
+        if (toolId === BLOCK.WOODEN_AXE || toolId === BLOCK.STONE_AXE) {
+          multiplier = toolId === BLOCK.STONE_AXE ? 4 : 2;
+        }
+        time = 3000 / multiplier;
         break;
-      case BLOCK.STONE:
-        baseTime = 5000;
-        break;
+
       case BLOCK.BEDROCK:
         return Infinity;
+
       default:
-        baseTime = 1000;
+        // Other blocks default to 1s
+        time = 1000;
         break;
     }
 
-    // Tool Multipliers
-    let multiplier = 1;
-
-    // AXES (Wood, Planks)
-    if (toolId === BLOCK.WOODEN_AXE || toolId === BLOCK.STONE_AXE) {
-      if (
-        blockType === BLOCK.WOOD ||
-        blockType === BLOCK.PLANKS ||
-        blockType === BLOCK.LEAVES
-      ) {
-        multiplier = toolId === BLOCK.STONE_AXE ? 4 : 2;
-      }
-    }
-
-    // PICKAXES (Stone)
-    if (toolId === BLOCK.WOODEN_PICKAXE || toolId === BLOCK.STONE_PICKAXE) {
-      if (blockType === BLOCK.STONE) {
-        multiplier = toolId === BLOCK.STONE_PICKAXE ? 4 : 2;
-      }
-    }
-
-    // SHOVELS (Dirt, Grass)
-    if (toolId === BLOCK.WOODEN_SHOVEL || toolId === BLOCK.STONE_SHOVEL) {
-      if (blockType === BLOCK.DIRT || blockType === BLOCK.GRASS) {
-        multiplier = toolId === BLOCK.STONE_SHOVEL ? 4 : 2;
-      }
-    }
-
-    return baseTime / multiplier;
+    return time;
   }
 
   public getBlock(x: number, y: number, z: number): number {
@@ -662,6 +697,97 @@ export class World {
       }
     }
 
+    // 1.5 Generate Ores (Veins)
+    let coalCount = 0;
+    let ironCount = 0;
+
+    const generateVein = (
+      blockType: number,
+      targetLen: number,
+      attempts: number,
+    ) => {
+      for (let i = 0; i < attempts; i++) {
+        // Pick random start
+        let vx = Math.floor(Math.random() * this.chunkSize);
+        let vz = Math.floor(Math.random() * this.chunkSize);
+
+        // Better height targeting: Find the surface to ensure we spawn in Stone
+        const worldX = startX + vx;
+        const worldZ = startZ + vz;
+        const noiseValue = this.noise2D(
+          worldX / this.TERRAIN_SCALE,
+          worldZ / this.TERRAIN_SCALE,
+        );
+        let surfaceHeight = Math.floor(noiseValue * this.TERRAIN_HEIGHT) + 20;
+        // Clamp to max stone layer (approx surface - 3 for dirt/grass)
+        let maxStoneY = surfaceHeight - 3;
+        if (maxStoneY < 2) maxStoneY = 2;
+
+        let vy = Math.floor(Math.random() * (maxStoneY - 1)) + 1; // 1 to maxStoneY
+
+        let index = this.getBlockIndex(vx, vy, vz);
+        if (data[index] === BLOCK.STONE) {
+          data[index] = blockType;
+          if (blockType === BLOCK.COAL_ORE) coalCount++;
+          else ironCount++;
+
+          // Grow vein
+          let currentLen = 1;
+          let fails = 0;
+          while (currentLen < targetLen && fails < 10) {
+            // Try to move
+            const dir = Math.floor(Math.random() * 6);
+            let nx = vx,
+              ny = vy,
+              nz = vz;
+
+            if (dir === 0) nx++;
+            else if (dir === 1) nx--;
+            else if (dir === 2) ny++;
+            else if (dir === 3) ny--;
+            else if (dir === 4) nz++;
+            else if (dir === 5) nz--;
+
+            if (
+              nx >= 0 &&
+              nx < this.chunkSize &&
+              ny > 0 &&
+              ny < this.chunkHeight &&
+              nz >= 0 &&
+              nz < this.chunkSize
+            ) {
+              index = this.getBlockIndex(nx, ny, nz);
+              if (data[index] === BLOCK.STONE) {
+                data[index] = blockType;
+                vx = nx;
+                vy = ny;
+                vz = nz; // Move cursor
+                currentLen++;
+                if (blockType === BLOCK.COAL_ORE) coalCount++;
+                else ironCount++;
+              } else if (data[index] === blockType) {
+                vx = nx;
+                vy = ny;
+                vz = nz; // Already ore, just move there
+              } else {
+                fails++; // Hit non-stone
+              }
+            } else {
+              fails++; // Out of bounds
+            }
+          }
+        }
+      }
+    };
+
+    // Coal: Very Frequent
+    generateVein(BLOCK.COAL_ORE, 8, 80);
+
+    // Iron: Frequent
+    generateVein(BLOCK.IRON_ORE, 6, 50);
+
+    // console.log(`Generated Chunk ${cx},${cz}: Coal: ${coalCount}, Iron: ${ironCount}`);
+
     // 2. Generate Trees (Second Pass)
     for (let x = 0; x < this.chunkSize; x++) {
       for (let z = 0; z < this.chunkSize; z++) {
@@ -832,14 +958,16 @@ export class World {
       }
 
       // UVs
-      // Atlas (Total slots: 6, step 1/6 = 0.16666...)
+      // Atlas (Total slots: 8, step 1/8 = 0.125)
       // 0: Noise
       // 1: Leaves
       // 2: Planks
       // 3: CT Top
       // 4: CT Side
       // 5: CT Bottom
-      const uvStep = 1.0 / 6.0;
+      // 6: Coal Ore
+      // 7: Iron Ore
+      const uvStep = 1.0 / 8.0;
       const uvInset = 0.001;
       let u0 = 0 + uvInset;
       let u1 = uvStep - uvInset;
@@ -862,11 +990,24 @@ export class World {
           u0 = uvStep * 4 + uvInset;
           u1 = uvStep * 5 - uvInset;
         }
+      } else if (type === BLOCK.COAL_ORE) {
+        u0 = uvStep * 6 + uvInset;
+        u1 = uvStep * 7 - uvInset;
+      } else if (type === BLOCK.IRON_ORE) {
+        u0 = uvStep * 7 + uvInset;
+        u1 = uvStep * 8 - uvInset;
       }
 
       uvs.push(u0, 0, u1, 0, u0, 1, u1, 1);
 
       // Colors (4 vertices per face)
+      // Handle Ore colors specifically to reset to White (texture handles color)
+      if (type === BLOCK.COAL_ORE || type === BLOCK.IRON_ORE) {
+        r = 1.0;
+        g = 1.0;
+        b = 1.0;
+      }
+
       for (let i = 0; i < 4; i++) colors.push(r, g, b);
     };
 
