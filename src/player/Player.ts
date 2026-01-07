@@ -5,6 +5,7 @@ import { PlayerHand } from "./PlayerHand";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { World } from "../world/World";
 import * as THREE from "three";
+import { MathUtils } from "three";
 import { HealthBar } from "../ui/HealthBar";
 
 export class Player {
@@ -54,6 +55,29 @@ export class Player {
 
   public update(delta: number) {
     this.physics.update(delta);
+
+    // FOV Effect
+    const baseFov = 75;
+    const sprintFov = 85;
+    const targetFov =
+      this.physics.isSprinting &&
+      (this.physics.moveForward ||
+        this.physics.moveBackward ||
+        this.physics.moveLeft ||
+        this.physics.moveRight)
+        ? sprintFov
+        : baseFov;
+
+    // Smoothly interpolate FOV
+    const currentFov = this.health.camera.fov; // Access camera via health or store it in Player
+    // Actually PlayerHealth has the camera, but maybe we should store it in Player too or access via controls object if it was a camera (controls.object is camera).
+    // physics.controls.object is the camera.
+    const camera = this.physics.controls.object as THREE.PerspectiveCamera;
+
+    if (Math.abs(currentFov - targetFov) > 0.1) {
+      camera.fov = MathUtils.lerp(currentFov, targetFov, delta * 5);
+      camera.updateProjectionMatrix();
+    }
 
     const isMoving =
       (this.physics.moveForward ||

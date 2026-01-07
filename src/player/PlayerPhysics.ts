@@ -27,8 +27,11 @@ export class PlayerPhysics {
   private readonly eyeHeight = PLAYER_EYE_HEIGHT;
 
   // Movement constants
-  private readonly speed = 50.0; // Acceleration force
+  private readonly walkSpeed = 40.0;
+  private readonly sprintSpeed = 65.0; // Increased for better feel
   private readonly friction = 10.0; // Friction factor
+
+  public isSprinting = false;
 
   // Invert Controls
   private invertedControls = false;
@@ -146,8 +149,9 @@ export class PlayerPhysics {
       this.moveLeft ||
       this.moveRight
     ) {
-      this.velocity.x += moveDir.x * this.speed * safeDelta;
-      this.velocity.z += moveDir.z * this.speed * safeDelta;
+      const currentSpeed = this.isSprinting ? this.sprintSpeed : this.walkSpeed;
+      this.velocity.x += moveDir.x * currentSpeed * safeDelta;
+      this.velocity.z += moveDir.z * currentSpeed * safeDelta;
     }
 
     const damping = Math.exp(-this.friction * safeDelta);

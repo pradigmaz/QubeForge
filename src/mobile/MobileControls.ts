@@ -80,6 +80,19 @@ export class MobileControls {
       this.joystickStick.style.transform = `translate(calc(-50% + ${stickX}px), calc(-50% + ${stickY}px))`;
 
       const threshold = 10;
+      const isMoving = Math.abs(dx) > threshold || Math.abs(dy) > threshold;
+
+      const btnRun = document.getElementById("btn-run");
+      if (btnRun) {
+        if (isMoving) {
+          btnRun.style.display = "flex";
+        } else {
+          btnRun.style.display = "none";
+          this.game.player.physics.isSprinting = false;
+          btnRun.style.backgroundColor = "";
+        }
+      }
+
       this.game.player.physics.moveForward = dy < -threshold;
       this.game.player.physics.moveBackward = dy > threshold;
       this.game.player.physics.moveLeft = dx < -threshold;
@@ -105,6 +118,13 @@ export class MobileControls {
         this.game.player.physics.moveBackward = false;
         this.game.player.physics.moveLeft = false;
         this.game.player.physics.moveRight = false;
+
+        const btnRun = document.getElementById("btn-run");
+        if (btnRun) {
+          btnRun.style.display = "none";
+          btnRun.style.backgroundColor = "";
+          this.game.player.physics.isSprinting = false;
+        }
       }
     };
 
@@ -117,6 +137,18 @@ export class MobileControls {
       e.preventDefault();
       this.game.player.physics.jump();
     });
+
+    const btnRun = document.getElementById("btn-run");
+    if (btnRun) {
+      btnRun.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        this.game.player.physics.isSprinting =
+          !this.game.player.physics.isSprinting;
+        btnRun.style.backgroundColor = this.game.player.physics.isSprinting
+          ? "rgba(255, 100, 0, 0.5)"
+          : "";
+      });
+    }
 
     const btnAttack = document.getElementById("btn-attack")!;
 

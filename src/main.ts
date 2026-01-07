@@ -190,7 +190,7 @@ const blockInteraction = new BlockInteraction(
       inventoryUI.refresh();
       if (inventoryUI.onInventoryChange) inventoryUI.onInventoryChange();
     }
-  }
+  },
 );
 
 const game = new Game(
@@ -358,6 +358,10 @@ const onKeyDown = (event: KeyboardEvent) => {
     case "KeyD":
       player.physics.moveRight = true;
       break;
+    case "ControlLeft":
+    case "ControlRight":
+      player.physics.isSprinting = !player.physics.isSprinting;
+      break;
     case "Space":
       player.physics.jump();
       break;
@@ -381,6 +385,7 @@ const onKeyUp = (event: KeyboardEvent) => {
     case "ArrowUp":
     case "KeyW":
       player.physics.moveForward = false;
+      player.physics.isSprinting = false; // Stop sprinting when forward key is released
       break;
     case "ArrowLeft":
     case "KeyA":
