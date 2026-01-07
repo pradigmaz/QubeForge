@@ -313,7 +313,18 @@ export class CraftingUI {
 
   private updateMobileCraftingList() {
     this.mobileCraftingList.innerHTML = "";
-    const currentSlots = this.inventory.getSlots();
+
+    // Helper to get current inventory map
+    const getInventoryMap = () => {
+      const map = new Map<number, number>();
+      const currentSlots = this.inventory.getSlots();
+      currentSlots.forEach((s) => {
+        if (s.id !== 0) map.set(s.id, (map.get(s.id) || 0) + s.count);
+      });
+      return map;
+    };
+
+    const invMap = getInventoryMap();
 
     RECIPES.forEach((recipe) => {
       // Filter logic for Mobile:
@@ -330,12 +341,6 @@ export class CraftingUI {
         }
         if (needs3x3) return;
       }
-
-      // 1. Tally Inventory
-      const invMap = new Map<number, number>();
-      currentSlots.forEach((s) => {
-        if (s.id !== 0) invMap.set(s.id, (invMap.get(s.id) || 0) + s.count);
-      });
 
       // 2. Tally Recipe Requirements
       const reqMap = new Map<number, number>();
@@ -356,8 +361,6 @@ export class CraftingUI {
 
       // 3. Check sufficiency
       let canCraft = true;
-
-      // Calculate max crafts if needed, but for button enabling just check if >= 1
       for (const [reqId, reqCount] of reqMap) {
         const has = invMap.get(reqId) || 0;
         if (has < reqCount) {
@@ -435,6 +438,19 @@ export class CraftingUI {
       }
 
       btn.onclick = () => {
+        // Double Check Requirements at Click Time (Fix Infinite Crafting)
+        const currentInvMap = getInventoryMap();
+        let currentCanCraft = true;
+        for (const [reqId, reqCount] of reqMap) {
+          const has = currentInvMap.get(reqId) || 0;
+          if (has < reqCount) {
+            currentCanCraft = false;
+            break;
+          }
+        }
+
+        if (!currentCanCraft) return;
+
         // Consume from inventory
         for (const [reqId, reqCount] of reqMap) {
           this.inventory.removeItem(reqId, reqCount);
@@ -442,7 +458,13 @@ export class CraftingUI {
 
         // Add result
         this.inventory.addItem(recipe.result.id, recipe.result.count);
-        this.inventoryUI.refresh(); // Updates list too
+
+        // Update everything
+        this.inventoryUI.refresh();
+        this.updateVisuals(); // Rebuilds this list
+        if (this.inventoryUI.onInventoryChange) {
+          this.inventoryUI.onInventoryChange();
+        }
       };
 
       this.mobileCraftingList.appendChild(btn);
