@@ -99,8 +99,23 @@ export class ItemEntity {
         b = 0.0;
       } // Stick (Dark Brown)
 
+      const grassTop = { r: 0.33, g: 0.6, b: 0.33 };
+      const grassSide = { r: 0.54, g: 0.27, b: 0.07 };
+
       for (let i = 0; i < count; i++) {
-        colors.push(r, g, b);
+        const faceIndex = Math.floor(i / 4); // Assuming BoxGeometry with 4 verts per face
+
+        if (type === 1) {
+          // Grass
+          if (faceIndex === 2) {
+            // Top
+            colors.push(grassTop.r, grassTop.g, grassTop.b);
+          } else {
+            colors.push(grassSide.r, grassSide.g, grassSide.b);
+          }
+        } else {
+          colors.push(r, g, b);
+        }
       }
 
       geometry.setAttribute(
@@ -165,6 +180,8 @@ export class ItemEntity {
         map: blockTexture,
         vertexColors: true,
         roughness: 0.8,
+        alphaTest: 0.5,
+        transparent: true,
       });
     }
 

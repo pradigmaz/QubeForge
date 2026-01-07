@@ -365,13 +365,34 @@ export class PlayerHand {
       // Crafting Table uses white (texture colors)
 
       const colors: number[] = [];
-      for (let i = 0; i < 24; i++) colors.push(r, g, b);
+      const grassTop = { r: 0.33, g: 0.6, b: 0.33 };
+      const grassSide = { r: 0.54, g: 0.27, b: 0.07 };
+
+      for (let i = 0; i < 24; i++) {
+        const faceIndex = Math.floor(i / 4); // 0..5
+        // BoxGeometry Faces: 0:Right, 1:Left, 2:Top, 3:Bottom, 4:Front, 5:Back
+
+        if (id === BLOCK.GRASS) {
+          if (faceIndex === 2) {
+            // Top
+            colors.push(grassTop.r, grassTop.g, grassTop.b);
+          } else {
+            // Sides/Bottom
+            colors.push(grassSide.r, grassSide.g, grassSide.b);
+          }
+        } else {
+          // Other blocks use uniform color
+          colors.push(r, g, b);
+        }
+      }
       geo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
 
       const mat = new THREE.MeshStandardMaterial({
         map: this.blockTexture,
         vertexColors: true,
         roughness: 0.8,
+        alphaTest: 0.5,
+        transparent: true,
       });
 
       this.currentMesh = new THREE.Mesh(geo, mat);
