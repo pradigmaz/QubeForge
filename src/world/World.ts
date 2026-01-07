@@ -347,6 +347,32 @@ export class World {
     }
   }
 
+  public async loadChunk(cx: number, cz: number) {
+    const key = `${cx},${cz}`;
+    await this.ensureChunk(cx, cz, key);
+  }
+
+  public getTopY(worldX: number, worldZ: number): number {
+    const cx = Math.floor(worldX / this.chunkSize);
+    const cz = Math.floor(worldZ / this.chunkSize);
+    const key = `${cx},${cz}`;
+    const data = this.chunksData.get(key);
+
+    if (!data) return this.getTerrainHeight(worldX, worldZ);
+
+    const localX = worldX - cx * this.chunkSize;
+    const localZ = worldZ - cz * this.chunkSize;
+
+    // Scan down from top
+    for (let y = this.chunkHeight - 1; y >= 0; y--) {
+      const index = this.getBlockIndex(localX, y, localZ);
+      if (data[index] !== BLOCK.AIR) {
+        return y;
+      }
+    }
+    return 0; // Fallback
+  }
+
   private async ensureChunk(cx: number, cz: number, key: string) {
     // 1. Check RAM
     if (this.chunksData.has(key)) {
@@ -585,6 +611,18 @@ export class World {
         }
       }
     }
+  }
+
+  public getTerrainHeight(worldX: number, worldZ: number): number {
+    const noiseValue = this.noise2D(
+      worldX / this.TERRAIN_SCALE,
+      worldZ / this.TERRAIN_SCALE,
+    );
+    // Must match generateChunk logic exactly
+    let height = Math.floor(noiseValue * this.TERRAIN_HEIGHT) + 20;
+    if (height < 1) height = 1;
+    if (height >= this.chunkHeight) height = this.chunkHeight - 1;
+    return height;
   }
 
   private generateChunk(cx: number, cz: number) {
