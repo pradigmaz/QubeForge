@@ -1,4 +1,5 @@
 import { Game } from "../core/Game";
+import { worldDB } from "../utils/DB";
 
 export class Menus {
   private game: Game;
@@ -12,7 +13,7 @@ export class Menus {
 
   // Buttons
   private btnNewGame: HTMLElement;
-  private btnContinue: HTMLElement;
+  private btnContinue: HTMLButtonElement;
   private btnResume: HTMLElement;
   private btnExit: HTMLElement;
   private btnSettingsMain: HTMLElement;
@@ -34,7 +35,9 @@ export class Menus {
     this.mobileUi = document.getElementById("mobile-ui");
 
     this.btnNewGame = document.getElementById("btn-new-game")!;
-    this.btnContinue = document.getElementById("btn-continue")!;
+    this.btnContinue = document.getElementById(
+      "btn-continue",
+    )! as HTMLButtonElement;
     this.btnResume = document.getElementById("btn-resume")!;
     this.btnExit = document.getElementById("btn-exit")!;
     this.btnSettingsMain = document.getElementById("btn-settings-main")!;
@@ -44,7 +47,15 @@ export class Menus {
     this.cbShadows = document.getElementById("cb-shadows") as HTMLInputElement;
     this.cbClouds = document.getElementById("cb-clouds") as HTMLInputElement;
 
+    this.btnContinue.disabled = true; // Default to disabled
+    this.checkSaveState();
+
     this.initListeners();
+  }
+
+  private async checkSaveState() {
+    const hasSave = await worldDB.hasSavedData();
+    this.btnContinue.disabled = !hasSave;
   }
 
   private initListeners() {
@@ -96,6 +107,7 @@ export class Menus {
   }
 
   public showMainMenu() {
+    this.checkSaveState();
     this.game.gameState.setPaused(true);
     this.game.gameState.setGameStarted(false);
 

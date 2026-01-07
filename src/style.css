@@ -1,122 +1,136 @@
 body {
-  margin: 0;
-  overflow: hidden;
-  user-select: none;
-  font-family: sans-serif;
+    margin: 0;
+    overflow: hidden;
+    user-select: none;
+    font-family: sans-serif;
 }
 canvas {
-  display: block;
+    display: block;
 }
 #blocker {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  color: white;
-  z-index: 10;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    color: white;
+    z-index: 10;
 }
 #instructions {
-  font-size: 24px;
-  cursor: pointer;
-  text-align: center;
+    font-size: 24px;
+    cursor: pointer;
+    text-align: center;
 }
 #ui-container {
-  position: absolute;
-  bottom: 10px;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  pointer-events: none;
-  z-index: 5;
+    position: absolute;
+    bottom: 10px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    z-index: 5;
 }
 #health-bar {
-  display: flex;
-  gap: 2px;
-  margin-bottom: 25px;
+    display: flex;
+    gap: 2px;
+    margin-bottom: 25px;
 }
 .hp-unit {
-  width: 10px;
-  height: 10px;
-  background-color: #ff3333;
-  border: 1px solid #500;
-  box-shadow: 1px 1px 0 #000;
+    width: 10px;
+    height: 10px;
+    background-color: #ff3333;
+    border: 1px solid #500;
+    box-shadow: 1px 1px 0 #000;
 }
 .hp-unit.empty {
-  background-color: #333;
-  border: 1px solid #111;
+    background-color: #333;
+    border: 1px solid #111;
 }
 #hotbar-label {
-  margin-bottom: 5px;
-  color: white;
-  font-size: 16px;
-  text-shadow: 1px 1px 2px black;
-  opacity: 0;
-  transition: opacity 0.5s;
-  height: 20px;
+    margin-bottom: 5px;
+    color: white;
+    font-size: 16px;
+    text-shadow: 1px 1px 2px black;
+    opacity: 0;
+    transition: opacity 0.5s;
+    height: 20px;
 }
 #hotbar {
-  display: flex;
-  gap: 4px;
-  background-color: rgba(0, 0, 0, 0.5);
-  padding: 4px;
-  border-radius: 4px;
-  pointer-events: auto;
+    display: flex;
+    gap: 4px;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 4px;
+    border-radius: 4px;
+    pointer-events: auto;
 }
 .slot {
-  width: 40px;
-  height: 40px;
-  border: 2px solid #555;
-  background-color: rgba(0, 0, 0, 0.3);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: white;
-  font-family: monospace;
-  font-size: 14px;
-  position: relative;
-  cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border: 2px solid #555;
+    background-color: rgba(0, 0, 0, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-family: monospace;
+    font-size: 14px;
+    position: relative;
+    cursor: pointer;
 }
 .slot:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.2);
 }
 .slot.active {
-  border-color: white;
-  background-color: rgba(255, 255, 255, 0.1);
+    border-color: white;
+    background-color: rgba(255, 255, 255, 0.1);
 }
 .slot-count {
-  position: absolute;
-  bottom: 2px;
-  right: 2px;
-  font-size: 10px;
-  text-shadow: 1px 1px 0 #000;
-  pointer-events: none;
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    font-size: 10px;
+    text-shadow: 1px 1px 0 #000;
+    pointer-events: none;
 }
 .block-icon {
-  width: 24px;
-  height: 24px;
-  background-size: cover;
-  image-rendering: pixelated;
-  background-image: var(--noise-url);
-  background-blend-mode: overlay;
-  box-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-  pointer-events: none;
+    width: 24px;
+    height: 24px;
+    background-size: cover;
+    image-rendering: pixelated;
+    background-image: var(--noise-url);
+    background-blend-mode: overlay;
+    box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
 }
 
 /* Custom Item Icons */
 .block-icon.item-stick {
-    background-image: linear-gradient(45deg, transparent 40%, #654321 40%, #654321 60%, transparent 60%);
-    background-blend-mode: normal; 
-    box-shadow: none; 
+    background-image: linear-gradient(
+        45deg,
+        transparent 40%,
+        #654321 40%,
+        #654321 60%,
+        transparent 60%
+    );
+    background-blend-mode: normal;
+    box-shadow: none;
 }
 .block-icon.item-planks {
-    background-image: var(--noise-url), repeating-linear-gradient(0deg, transparent, transparent 20%, rgba(0,0,0,0.3) 20%, rgba(0,0,0,0.3) 25%);
+    background-image:
+        var(--noise-url),
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 20%,
+            rgba(0, 0, 0, 0.3) 20%,
+            rgba(0, 0, 0, 0.3) 25%
+        );
     background-blend-mode: overlay, normal;
 }
 
@@ -130,18 +144,18 @@ canvas {
 
 /* Inventory Menu */
 #inventory-menu {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: rgba(0, 0, 0, 0.8);
-  padding: 20px;
-  border-radius: 8px;
-  color: white;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    border-radius: 8px;
+    color: white;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 /* Mobile Inventory Adjustments */
@@ -180,7 +194,7 @@ canvas {
     gap: 15px;
     margin-bottom: 20px;
     padding: 10px;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 4px;
 }
 
@@ -209,10 +223,10 @@ canvas {
 }
 
 #inventory-grid {
-  display: grid;
-  grid-template-columns: repeat(9, 1fr);
-  gap: 4px;
-  margin-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 4px;
+    margin-top: 10px;
 }
 
 /* Mobile Slot Sizing */
@@ -253,10 +267,10 @@ canvas {
     width: 5px;
 }
 #mobile-crafting-list::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.3); 
+    background: rgba(0, 0, 0, 0.3);
 }
 #mobile-crafting-list::-webkit-scrollbar-thumb {
-    background: #555; 
+    background: #555;
     border-radius: 3px;
 }
 
@@ -287,7 +301,7 @@ canvas {
     position: relative;
     width: 32px;
     height: 32px;
-    background-color: rgba(0,0,0,0.3);
+    background-color: rgba(0, 0, 0, 0.3);
 }
 
 .craft-ingredients {
@@ -304,32 +318,32 @@ canvas {
 }
 
 .slot-hotbar-separator {
-  margin-top: 15px; 
+    margin-top: 15px;
 }
 
 #drag-icon {
-  position: fixed;
-  pointer-events: none;
-  z-index: 100;
-  display: none;
+    position: fixed;
+    pointer-events: none;
+    z-index: 100;
+    display: none;
 }
 
 #tooltip {
-  position: absolute;
-  background-color: rgba(0,0,0,0.8);
-  color: white;
-  padding: 5px 8px;
-  border-radius: 4px;
-  font-size: 14px;
-  pointer-events: none;
-  z-index: 30;
-  display: none;
-  border: 1px solid #555;
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    pointer-events: none;
+    z-index: 30;
+    display: none;
+    border: 1px solid #555;
     white-space: nowrap;
-  }
-  
-  /* Damage Flash */
-  #damage-overlay {
+}
+
+/* Damage Flash */
+#damage-overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -340,9 +354,9 @@ canvas {
     pointer-events: none;
     z-index: 15;
     transition: opacity 0.5s ease-out;
-  }
-  
-  #crosshair {
+}
+
+#crosshair {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -352,16 +366,19 @@ canvas {
     pointer-events: none;
     z-index: 20;
     text-shadow: 1px 1px 1px black;
-  }
-  
-  /* Minecraft Menus */
-  #main-menu, #pause-menu, #settings-menu {
+}
+
+/* Minecraft Menus */
+#main-menu,
+#pause-menu,
+#settings-menu {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAAXNSR0IArs4c6QAAACklEQVQImWNgQAYiIiL/QTSjBgMDIyMjAxKHiUGAgYGBAR0wMaADJgYAAD0CBAh7W1UAAAAASUVORK5CYII=') repeat; /* Dirt texture pattern approximation */
+    background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAAXNSR0IArs4c6QAAACklEQVQImWNgQAYiIiL/QTSjBgMDIyMjAxKHiUGAgYGBAR0wMaADJgYAAD0CBAh7W1UAAAAASUVORK5CYII=")
+        repeat; /* Dirt texture pattern approximation */
     background-color: #222;
     display: flex;
     flex-direction: column;
@@ -369,32 +386,34 @@ canvas {
     align-items: center;
     z-index: 100;
     color: white;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: "Courier New", Courier, monospace;
     text-align: center;
-  }
-  
-  #main-menu h1, #pause-menu h2, #settings-menu h2 {
+}
+
+#main-menu h1,
+#pause-menu h2,
+#settings-menu h2 {
     font-size: 48px;
     margin-bottom: 40px;
     text-shadow: 4px 4px 0px #3f3f3f;
-  }
-  
-  .setting-item {
-      margin: 20px;
-      font-size: 24px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-shadow: 2px 2px 0px #3f3f3f;
-  }
-  
-  .setting-item input[type="checkbox"] {
-      width: 24px;
-      height: 24px;
-      cursor: pointer;
-  }
+}
 
-  .minecraft-btn {
+.setting-item {
+    margin: 20px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-shadow: 2px 2px 0px #3f3f3f;
+}
+
+.setting-item input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.minecraft-btn {
     width: 400px;
     height: 40px;
     margin: 10px;
@@ -405,31 +424,45 @@ canvas {
     border-bottom-color: #555;
     border-right-color: #555;
     color: #fff;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: "Courier New", Courier, monospace;
     font-size: 20px;
     cursor: pointer;
     text-shadow: 2px 2px 0px #3f3f3f;
-    box-shadow: inset -2px -2px 0px #555, inset 2px 2px 0px #a0a0a0;
-  }
+    box-shadow:
+        inset -2px -2px 0px #555,
+        inset 2px 2px 0px #a0a0a0;
+}
 
-  .minecraft-btn:hover {
+.minecraft-btn:hover {
     background-color: #8f8f8f;
     border-top-color: #b4b4b4;
     border-left-color: #b4b4b4;
     color: #ffffa0;
-  }
+}
 
-  .minecraft-btn:active {
+.minecraft-btn:active {
     background-color: #5c5c5c;
     border-top-color: #444;
     border-left-color: #444;
     border-bottom-color: #888;
     border-right-color: #888;
     box-shadow: inset 2px 2px 0px #333;
-  }
+}
 
-  /* Mobile Controls */
-  #mobile-ui {
+.minecraft-btn:disabled {
+    color: #888;
+    text-shadow: none;
+    cursor: not-allowed;
+    background-color: #333;
+    border-top-color: #444;
+    border-left-color: #444;
+    border-bottom-color: #222;
+    border-right-color: #222;
+    box-shadow: none;
+}
+
+/* Mobile Controls */
+#mobile-ui {
     display: none; /* Hidden by default, shown via JS if mobile */
     position: absolute;
     top: 0;
@@ -438,36 +471,37 @@ canvas {
     height: 100%;
     pointer-events: none;
     z-index: 50;
-  }
-  
-  .is-mobile #mobile-ui {
+}
+
+.is-mobile #mobile-ui {
     display: block;
-  }
-  
-  /* Hide standard PC overlay on mobile if needed */
-  .is-mobile #blocker, .is-mobile #instructions {
+}
+
+/* Hide standard PC overlay on mobile if needed */
+.is-mobile #blocker,
+.is-mobile #instructions {
     display: none !important;
-  }
-  
-  #joystick-zone {
+}
+
+#joystick-zone {
     position: absolute;
     bottom: 20px;
     left: 20px;
     width: 150px;
     height: 150px;
     pointer-events: auto;
-  }
-  
-  #joystick-base {
+}
+
+#joystick-base {
     width: 100%;
     height: 100%;
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
     position: relative;
-  }
-  
-  #joystick-stick {
+}
+
+#joystick-stick {
     width: 50px;
     height: 50px;
     background: rgba(255, 255, 255, 0.5);
@@ -477,18 +511,18 @@ canvas {
     left: 50%;
     transform: translate(-50%, -50%);
     pointer-events: none;
-  }
-  
-  #mobile-actions {
+}
+
+#mobile-actions {
     position: absolute;
     bottom: 40px;
     right: 20px;
     display: flex;
     gap: 15px;
     pointer-events: auto;
-  }
-  
-  .mob-btn {
+}
+
+.mob-btn {
     width: 60px;
     height: 60px;
     border-radius: 50%;
@@ -500,13 +534,13 @@ canvas {
     align-items: center;
     font-weight: bold;
     user-select: none;
-  }
-  
-  .mob-btn:active {
+}
+
+.mob-btn:active {
     background: rgba(255, 255, 255, 0.5);
-  }
-  
-  #btn-inv {
+}
+
+#btn-inv {
     position: absolute;
     top: 10px;
     right: 10px;
@@ -514,9 +548,9 @@ canvas {
     height: 40px;
     font-size: 12px;
     pointer-events: auto;
-  }
-  
-  #btn-menu {
+}
+
+#btn-menu {
     position: absolute;
     top: 10px;
     left: 10px;
@@ -524,29 +558,29 @@ canvas {
     height: 40px;
     font-size: 12px;
     pointer-events: auto;
-  }
+}
 
 /* CLI Styles */
 #cli-container {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 40px;
-  background-color: rgba(0, 0, 0, 0.8);
-  display: none;
-  z-index: 100;
-  align-items: center;
-  padding: 0 10px;
-  box-sizing: border-box;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: none;
+    z-index: 100;
+    align-items: center;
+    padding: 0 10px;
+    box-sizing: border-box;
 }
 
 #cli-input {
-  width: 100%;
-  background: transparent;
-  border: none;
-  color: white;
-  font-family: monospace;
-  font-size: 16px;
-  outline: none;
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: white;
+    font-family: monospace;
+    font-size: 16px;
+    outline: none;
 }

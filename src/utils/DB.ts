@@ -100,6 +100,16 @@ export class DB {
       transaction.objectStore("meta").clear();
     });
   }
+
+  async hasSavedData(): Promise<boolean> {
+    try {
+      if (!this.db) await this.init();
+      const meta = await this.get("player", "meta");
+      return !!meta;
+    } catch (e) {
+      return false;
+    }
+  }
 }
 
 export const worldDB = new DB();
