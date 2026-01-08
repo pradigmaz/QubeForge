@@ -78,11 +78,67 @@ export class InventoryUI {
         const slotEl = target?.closest(".slot");
 
         if (slotEl) {
-          const targetIndex = parseInt(
-            slotEl.getAttribute("data-index") || "-1",
-          );
-          if (targetIndex !== -1) {
-            this.handleSlotClick(targetIndex);
+          // Check if slot belongs to inventory UI
+          if (
+            !this.hotbarContainer.contains(slotEl) &&
+            !this.inventoryGrid.contains(slotEl)
+          ) {
+            // Not our slot (e.g. Furnace slot), ignore (let other UI handle or drop?)
+            // If we don't return to start, and don't place, it stays on cursor.
+            // But FurnaceUI doesn't implement 'touchend' placement.
+            // So if user drags from Inventory to Furnace, InventoryUI sees "End on Slot (Furnace)".
+            // It ignores it.
+            // Item stays on cursor.
+            // User has to TAP Furnace to place.
+
+            // To fix "sticking" feeling:
+            // 1. Either enable Tap-to-Place (which works now).
+            // 2. Or enable Drag-to-Furnace.
+
+            // The user complaint is "it sticks". This confirms they tried to Drag-and-Drop.
+            // Since FurnaceUI has no drop handler, nothing happens.
+
+            // We should ideally call FurnaceUI handle click here?
+            // Or just return, and user learns to tap?
+            // User said "you have to press it again". That confirms Tap works.
+            // They find the "sticking" annoying.
+
+            // If we want seamless Drag-Drop:
+            // We need a shared DragDrop manager that handles Drop on ANY slot.
+
+            // QUICK FIX for now:
+            // If we drop on a Furnace slot, try to simulate a click on it?
+
+            if (slotEl.classList.contains("slot")) {
+              // It is a slot, just not ours.
+              // Dispatch a click/touchstart on it?
+              // But we are in `touchend`.
+              // Let's manually trigger the click logic for that element.
+              // slotEl.click(); // Might work if click listener exists.
+              // FurnaceUI uses `mousedown` and `touchstart`.
+              // Let's dispatch `mousedown`?
+
+              // Better: dispatch a custom event or reuse logic.
+              // Simple hack: check if it has an id like `furnace-slot-...`
+
+              const event = new MouseEvent("mousedown", {
+                bubbles: true,
+                cancelable: true,
+                view: window,
+                button: 0, // Left click
+              });
+              slotEl.dispatchEvent(event);
+
+              // If successful, `draggedItem` should become null.
+              // We should check that before clearing `touchStartSlotIndex`.
+            }
+          } else {
+            const targetIndex = parseInt(
+              slotEl.getAttribute("data-index") || "-1",
+            );
+            if (targetIndex !== -1) {
+              this.handleSlotClick(targetIndex);
+            }
           }
         } else {
           // Return to start

@@ -702,6 +702,8 @@ const MIN_LOAD_TIME = 2000; // Minimum visibility time in ms
 // Init World Data
 world.loadWorld().then(async (data) => {
   if (data.playerPosition) {
+    // Add small Y offset to prevent falling through floor or sticking in block on load
+    data.playerPosition.y += 0.5;
     controls.object.position.copy(data.playerPosition);
   }
   if (data.inventory) {
