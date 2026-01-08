@@ -80,12 +80,52 @@ export const ORE_PATTERN = [
   "2222222222222222",
   "2222222222222222",
 ];
+
+export const FURNACE_FRONT_PATTERN = [
+  "2222222222222222",
+  "2222222222222222",
+  "2211111111111122",
+  "2212222222222122",
+  "2212222222222122",
+  "2212222222222122",
+  "2211111111111122",
+  "2222222222222222",
+  "2222222222222222",
+  "2211111111111122",
+  "2212222222222122",
+  "2212111111112122",
+  "2212111111112122",
+  "2212222222222122",
+  "2211111111111122",
+  "2222222222222222",
+];
+
+export const FURNACE_TOP_PATTERN = [
+  "2222222222222222",
+  "2111111111111112",
+  "2122222222222212",
+  "2121111111111212",
+  "2121111111111212",
+  "2121111111111212",
+  "2121111111111212",
+  "2121111111111212",
+  "2121111111111212",
+  "2121111111111212",
+  "2121111111111212",
+  "2121111111111212",
+  "2121111111111212",
+  "2122222222222212",
+  "2111111111111112",
+  "2222222222222222",
+];
+
 export const BLOCK_COLORS = {
   WOOD_PRIMARY: "#B47850", // Light Brown (180, 120, 80)
   WOOD_SECONDARY: "#50321E", // Dark Brown (80, 50, 30)
   COAL_BLACK: "#2A2A2A", // Dark Grey/Black
   IRON_BEIGE: "#E6C8A0", // Beige/Light Orange
   STONE_GREY: "#7D7D7D", // Standard Stone
+  FURNACE_DARK: "#404040",
 };
 
 export interface BlockTextureDef {
@@ -119,6 +159,27 @@ export const BLOCK_DEFS: Record<string, BlockTextureDef> = {
     pattern: ORE_PATTERN,
     colors: {
       primary: BLOCK_COLORS.IRON_BEIGE,
+      secondary: BLOCK_COLORS.STONE_GREY,
+    },
+  },
+  FURNACE_FRONT: {
+    pattern: FURNACE_FRONT_PATTERN,
+    colors: {
+      primary: BLOCK_COLORS.FURNACE_DARK,
+      secondary: BLOCK_COLORS.STONE_GREY,
+    },
+  },
+  FURNACE_SIDE: {
+    pattern: CT_SIDE_PATTERN, // Re-using simple side pattern
+    colors: {
+      primary: BLOCK_COLORS.FURNACE_DARK,
+      secondary: BLOCK_COLORS.STONE_GREY,
+    },
+  },
+  FURNACE_TOP: {
+    pattern: FURNACE_TOP_PATTERN,
+    colors: {
+      primary: BLOCK_COLORS.FURNACE_DARK,
       secondary: BLOCK_COLORS.STONE_GREY,
     },
   },

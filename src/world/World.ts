@@ -2,33 +2,8 @@ import * as THREE from "three";
 import { createNoise2D } from "simplex-noise";
 import { worldDB } from "../utils/DB";
 import { BLOCK_DEFS, hexToRgb } from "../constants/BlockTextures";
-
-// Block IDs
-export const BLOCK = {
-  AIR: 0,
-  GRASS: 1,
-  DIRT: 2,
-  STONE: 3,
-  BEDROCK: 4,
-  WOOD: 5,
-  LEAVES: 6,
-  PLANKS: 7,
-  STICK: 8,
-  CRAFTING_TABLE: 9,
-  COAL_ORE: 10,
-  IRON_ORE: 11,
-  COAL: 12,
-  IRON_INGOT: 13,
-  WOODEN_SWORD: 20,
-  STONE_SWORD: 21,
-  WOODEN_PICKAXE: 22,
-  STONE_PICKAXE: 23,
-  WOODEN_AXE: 24,
-  STONE_AXE: 25,
-  WOODEN_SHOVEL: 26,
-  STONE_SHOVEL: 27,
-  BROKEN_COMPASS: 30,
-};
+import { BLOCK } from "../constants/Blocks";
+import { FurnaceManager } from "../crafting/FurnaceManager";
 
 type Chunk = {
   mesh: THREE.Mesh;
@@ -227,7 +202,7 @@ export class World {
   // --- Core Logic ---
 
   private createNoiseTexture(): THREE.DataTexture {
-    const width = 128; // 16 * 8
+    const width = 192; // 12 * 16
     const height = 16;
     const data = new Uint8Array(width * height * 4); // RGBA
 
@@ -296,7 +271,7 @@ export class World {
           data[stride + 1] = rgb.g;
           data[stride + 2] = rgb.b;
         }
-      } else if (x >= 96) {
+      } else if (x >= 96 && x < 128) {
         // Ores (96-112: Coal, 112-128: Iron)
         const localX = x % 16;
         let def = null;
@@ -308,10 +283,6 @@ export class World {
 
           if (char === "2") {
             // Secondary (Base) -> Match Stone appearance
-            // Stone gets noise v (150-255) multiplied by vertex color 0.5 -> ~75-127
-            // Here vertex color is 1.0, so we must output ~75-127 directly in texture.
-
-            // Generate noise similar to base
             const noiseV = Math.floor(Math.random() * (255 - 150) + 150);
             const stoneV = Math.floor(noiseV * 0.5);
 
@@ -319,12 +290,36 @@ export class World {
             data[stride + 1] = stoneV;
             data[stride + 2] = stoneV;
           } else {
-            // Primary (Spot)
+            // Primary (Ore)
             const rgb = hexToRgb(def.colors.primary);
             data[stride] = rgb.r;
             data[stride + 1] = rgb.g;
             data[stride + 2] = rgb.b;
           }
+        }
+      } else if (x >= 128) {
+        // Furnace (128-144: Front, 144-160: Side, 160-176: Top)
+        const localX = x % 16;
+        let def = null;
+        if (x < 144) def = BLOCK_DEFS.FURNACE_FRONT;
+        else if (x < 160) def = BLOCK_DEFS.FURNACE_SIDE;
+        else if (x < 176) def = BLOCK_DEFS.FURNACE_TOP;
+
+        if (def && def.pattern && def.colors) {
+          const char = def.pattern[y][localX];
+          let colorHex = def.colors.primary;
+          if (char === "2") colorHex = def.colors.secondary;
+          const rgb = hexToRgb(colorHex);
+
+          // Apply noise for grain
+          const noise = Math.random() * 0.1 - 0.05; // +/- 5%
+          const r = Math.min(255, Math.max(0, rgb.r + noise * 255));
+          const g = Math.min(255, Math.max(0, rgb.g + noise * 255));
+          const b = Math.min(255, Math.max(0, rgb.b + noise * 255));
+
+          data[stride] = r;
+          data[stride + 1] = g;
+          data[stride + 2] = b;
         }
       }
     }
@@ -958,16 +953,10 @@ export class World {
       }
 
       // UVs
-      // Atlas (Total slots: 8, step 1/8 = 0.125)
-      // 0: Noise
-      // 1: Leaves
-      // 2: Planks
-      // 3: CT Top
-      // 4: CT Side
-      // 5: CT Bottom
-      // 6: Coal Ore
-      // 7: Iron Ore
-      const uvStep = 1.0 / 8.0;
+      // Atlas (Total slots: 12, step 1/12)
+      // 0: Noise, 1: Leaves, 2: Planks, 3: CT Top, 4: CT Side, 5: CT Bottom
+      // 6: Coal Ore, 7: Iron Ore, 8: Furnace Front, 9: Furnace Side, 10: Furnace Top
+      const uvStep = 1.0 / 12.0;
       const uvInset = 0.001;
       let u0 = 0 + uvInset;
       let u1 = uvStep - uvInset;
@@ -996,13 +985,57 @@ export class World {
       } else if (type === BLOCK.IRON_ORE) {
         u0 = uvStep * 7 + uvInset;
         u1 = uvStep * 8 - uvInset;
+      } else if (type === BLOCK.FURNACE) {
+        if (side === "top") {
+          u0 = uvStep * 10 + uvInset;
+          u1 = uvStep * 11 - uvInset;
+        } else if (side === "bottom") {
+          u0 = uvStep * 9 + uvInset;
+          u1 = uvStep * 10 - uvInset;
+        } else {
+          // Check Furnace Manager for rotation
+          const furnace = FurnaceManager.getInstance().getFurnace(
+            startX + x,
+            y,
+            startZ + z,
+          );
+
+          let frontFace = "front"; // Default South (+Z)
+          let rot = furnace ? furnace.rotation : 0;
+
+          // Rotation: 0=North, 1=East, 2=South, 3=West
+          // We want the "front" texture to appear on the face corresponding to rotation.
+
+          // Faces: front(+z), back(-z), right(+x), left(-x)
+          // Rot 0 (North/-Z): Front texture on "back" face
+          // Rot 1 (East/+X): Front texture on "right" face
+          // Rot 2 (South/+Z): Front texture on "front" face
+          // Rot 3 (West/-X): Front texture on "left" face
+
+          if (rot === 0) frontFace = "back";
+          else if (rot === 1) frontFace = "right";
+          else if (rot === 2) frontFace = "front";
+          else if (rot === 3) frontFace = "left";
+
+          if (side === frontFace) {
+            u0 = uvStep * 8 + uvInset;
+            u1 = uvStep * 9 - uvInset;
+          } else {
+            u0 = uvStep * 9 + uvInset;
+            u1 = uvStep * 10 - uvInset;
+          }
+        }
       }
 
       uvs.push(u0, 0, u1, 0, u0, 1, u1, 1);
 
       // Colors (4 vertices per face)
-      // Handle Ore colors specifically to reset to White (texture handles color)
-      if (type === BLOCK.COAL_ORE || type === BLOCK.IRON_ORE) {
+      // Handle Ore/Furnace colors specifically to reset to White (texture handles color)
+      if (
+        type === BLOCK.COAL_ORE ||
+        type === BLOCK.IRON_ORE ||
+        type === BLOCK.FURNACE
+      ) {
         r = 1.0;
         g = 1.0;
         b = 1.0;

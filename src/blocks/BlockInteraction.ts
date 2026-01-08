@@ -1,7 +1,8 @@
 import * as THREE from "three";
 import { PerspectiveCamera } from "three";
 import { Scene } from "three";
-import { World, BLOCK } from "../world/World";
+import { World } from "../world/World";
+import { BLOCK } from "../constants/Blocks";
 import { Mob } from "../mobs/Mob";
 import {
   PLAYER_HALF_WIDTH,
@@ -27,6 +28,7 @@ export class BlockInteraction {
     blockId: number,
   ) => boolean;
   private onOpenCraftingTable?: () => void;
+  private onOpenFurnace?: (x: number, y: number, z: number) => void;
   private onConsumeItem?: () => void;
 
   constructor(
@@ -41,10 +43,11 @@ export class BlockInteraction {
       blockId: number,
     ) => boolean,
     onOpenCraftingTable?: () => void,
+    onOpenFurnace?: (x: number, y: number, z: number) => void,
     cursorMesh?: THREE.Mesh,
     crackMesh?: THREE.Mesh,
     getMobs?: () => Mob[],
-    onConsumeItem?: () => void
+    onConsumeItem?: () => void,
   ) {
     this.camera = camera;
     this.scene = scene;
@@ -52,6 +55,7 @@ export class BlockInteraction {
     this.getSelectedSlotItem = getSelectedSlotItem;
     this.onPlaceBlock = onPlaceBlock;
     this.onOpenCraftingTable = onOpenCraftingTable;
+    this.onOpenFurnace = onOpenFurnace;
     this.cursorMesh = cursorMesh;
     this.crackMesh = crackMesh;
     this.getMobs = getMobs;
@@ -63,40 +67,41 @@ export class BlockInteraction {
     // 1. Check Item Usage (Broken Compass)
     const slot = this.getSelectedSlotItem();
     if (slot.id === BLOCK.BROKEN_COMPASS) {
-        // Random Teleport Logic
-        const playerPos = this.controls.object.position;
-        const angle = Math.random() * Math.PI * 2;
-        const dist = 5 + Math.random() * 25; // 5 to 30 blocks away
+      // Random Teleport Logic
+      const playerPos = this.controls.object.position;
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 5 + Math.random() * 25; // 5 to 30 blocks away
 
-        const targetX = playerPos.x + Math.sin(angle) * dist;
-        const targetZ = playerPos.z + Math.cos(angle) * dist;
+      const targetX = playerPos.x + Math.sin(angle) * dist;
+      const targetZ = playerPos.z + Math.cos(angle) * dist;
 
-        const tx = Math.floor(targetX);
-        const tz = Math.floor(targetZ);
+      const tx = Math.floor(targetX);
+      const tz = Math.floor(targetZ);
 
-        // Find valid ground
-        let topY = world.getTopY(tx, tz);
-        
-        // If valid height found (and not void)
-        if (topY > 0) {
-             const targetY = topY + 3.0; // Drop from above to prevent sticking
-             
-             // Check if target is not too high/low compared to current?
-             // Not strictly required by prompt, but good practice.
-             // Prompt says "random place in radius 30".
-             
-             playerPos.set(tx + 0.5, targetY, tz + 0.5);
-             
-             // Reset velocity to prevent fall damage or momentum
-             if ((this.controls as any).velocity) (this.controls as any).velocity.set(0,0,0);
+      // Find valid ground
+      let topY = world.getTopY(tx, tz);
 
-             // Consume Item
-             if (this.onConsumeItem) this.onConsumeItem();
-             
-             return; // Stop interaction
-        }
-        // If no valid ground found (void), do nothing (waste use? or prevent use?)
-        // Let's prevent use if invalid target.
+      // If valid height found (and not void)
+      if (topY > 0) {
+        const targetY = topY + 3.0; // Drop from above to prevent sticking
+
+        // Check if target is not too high/low compared to current?
+        // Not strictly required by prompt, but good practice.
+        // Prompt says "random place in radius 30".
+
+        playerPos.set(tx + 0.5, targetY, tz + 0.5);
+
+        // Reset velocity to prevent fall damage or momentum
+        if ((this.controls as any).velocity)
+          (this.controls as any).velocity.set(0, 0, 0);
+
+        // Consume Item
+        if (this.onConsumeItem) this.onConsumeItem();
+
+        return; // Stop interaction
+      }
+      // If no valid ground found (void), do nothing (waste use? or prevent use?)
+      // Let's prevent use if invalid target.
     }
 
     this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
@@ -123,6 +128,11 @@ export class BlockInteraction {
       if (targetId === BLOCK.CRAFTING_TABLE) {
         if (this.onOpenCraftingTable) {
           this.onOpenCraftingTable();
+        }
+        return;
+      } else if (targetId === BLOCK.FURNACE) {
+        if (this.onOpenFurnace) {
+          this.onOpenFurnace(x, y, z);
         }
         return;
       }

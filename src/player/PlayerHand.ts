@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { BLOCK } from "../world/World";
+import { BLOCK } from "../constants/Blocks";
 import { BLOCK_DEFS, hexToRgb } from "../constants/BlockTextures";
 import { TOOL_DEFS } from "../constants/ToolTextures";
 
@@ -314,8 +314,8 @@ export class PlayerHand {
       const geo = new THREE.BoxGeometry(0.6, 0.6, 0.6);
 
       // UV Logic
-      // Atlas: 8 Columns
-      const uvStep = 1.0 / 8.0;
+      // Atlas: 12 Columns
+      const uvStep = 1.0 / 12.0;
       const uvInset = 0.001;
 
       const getRange = (idx: number) => {
@@ -330,6 +330,8 @@ export class PlayerHand {
       // Faces: 0:Right, 1:Left, 2:Top, 3:Bottom, 4:Front, 5:Back
       for (let face = 0; face < 6; face++) {
         let texIdx = 0; // Default Noise
+        // 0: Noise, 1: Leaves, 2: Planks, 3: CT Top, 4: CT Side, 5: CT Bottom
+        // 6: Coal Ore, 7: Iron Ore, 8: Furnace Front, 9: Furnace Side, 10: Furnace Top
 
         if (id === BLOCK.LEAVES) texIdx = 1;
         else if (id === BLOCK.PLANKS) texIdx = 2;
@@ -343,6 +345,18 @@ export class PlayerHand {
           texIdx = 6;
         } else if (id === BLOCK.IRON_ORE) {
           texIdx = 7;
+        } else if (id === BLOCK.FURNACE) {
+          if (face === 2)
+            texIdx = 10; // Top
+          else if (face === 3)
+            texIdx = 5; // Bottom (Reuse CT bottom or Side) -> Let's reuse Side (9) or just make it dark. Side is fine.
+          else if (face === 0)
+            texIdx = 8; // Right (When held, orientation matters. BoxGeometry default: +x is Right. +z is Front.)
+          // Wait, BoxGeometry faces: 0:Right(+x), 1:Left(-x), 2:Top(+y), 3:Bottom(-y), 4:Front(+z), 5:Back(-z).
+          // If we rotate mesh by PI/4 (45 deg), Front face is towards camera?
+          // Let's just map Front (4) to Furnace Front.
+          else if (face === 4) texIdx = 8;
+          else texIdx = 9; // Side
         }
 
         const { min, max } = getRange(texIdx);
@@ -390,7 +404,11 @@ export class PlayerHand {
         r = 0.4;
         g = 0.2;
         b = 0.0;
-      } else if (id === BLOCK.COAL_ORE || id === BLOCK.IRON_ORE) {
+      } else if (
+        id === BLOCK.COAL_ORE ||
+        id === BLOCK.IRON_ORE ||
+        id === BLOCK.FURNACE
+      ) {
         r = 1.0;
         g = 1.0;
         b = 1.0; // Texture has colors

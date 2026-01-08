@@ -1,7 +1,7 @@
-import { TOOL_TEXTURES } from "../constants/ToolTextures";
-import { getBlockColor } from "../utils/BlockColors";
 import type { InventorySlot } from "./Inventory";
-import { BLOCK } from "../world/World";
+import { TOOL_TEXTURES } from "../constants/ToolTextures";
+import { BLOCK } from "../constants/Blocks";
+import { getBlockColor } from "../utils/BlockColors";
 
 export class DragDrop {
   private draggedItem: InventorySlot | null = null;

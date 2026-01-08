@@ -479,6 +479,7 @@ export class CraftingUI {
       this.updateCraftingGridSize();
       this.updateVisuals();
     } else {
+      this.craftingArea.style.display = "none";
       if (this.isMobile) {
         this.mobileCraftingList.style.display = "none";
       }

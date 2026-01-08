@@ -13,6 +13,8 @@ import { Inventory } from "../inventory/Inventory";
 import { InventoryUI } from "../inventory/InventoryUI";
 import { CraftingSystem } from "../crafting/CraftingSystem";
 import { CraftingUI } from "../crafting/CraftingUI";
+import { FurnaceUI } from "../crafting/FurnaceUI";
+import { FurnaceManager } from "../crafting/FurnaceManager";
 import { MobileControls } from "../mobile/MobileControls";
 import { CLI } from "../ui/CLI";
 import { Menus } from "../ui/Menus";
@@ -35,6 +37,7 @@ export class Game {
   public inventoryUI: InventoryUI;
   public craftingSystem: CraftingSystem;
   public craftingUI: CraftingUI;
+  public furnaceUI: FurnaceUI;
   public mobileControls: MobileControls | null = null;
   public cli: CLI;
   public menus: Menus;
@@ -59,6 +62,7 @@ export class Game {
     inventoryUI: InventoryUI,
     craftingSystem: CraftingSystem,
     craftingUI: CraftingUI,
+    furnaceUI: FurnaceUI,
   ) {
     this.renderer = renderer;
     this.gameState = gameState;
@@ -74,6 +78,7 @@ export class Game {
     this.inventoryUI = inventoryUI;
     this.craftingSystem = craftingSystem;
     this.craftingUI = craftingUI;
+    this.furnaceUI = furnaceUI;
 
     // UI Systems
     this.cli = new CLI(this);
@@ -139,6 +144,12 @@ export class Game {
     // World & Environment
     this.world.update(this.renderer.controls.object.position);
     this.environment.update(delta, this.renderer.controls.object.position);
+    FurnaceManager.getInstance().tick(delta);
+    if (this.furnaceUI.isVisible()) {
+      this.furnaceUI.updateVisuals();
+    }
+
+    // Player Update (Physics & Hand)
 
     // Player Update (Physics & Hand)
     this.player.update(delta);
@@ -169,14 +180,17 @@ export class Game {
         ) < 2.5
       ) {
         // Pickup logic
-        const added = this.inventory.addItem(entity.type, 1);
-        if (added === 0) {
+        const remaining = this.inventory.addItem(entity.type, entity.count);
+        entity.count = remaining;
+
+        if (remaining === 0) {
           entity.dispose();
           this.entities.splice(i, 1);
-          this.inventoryUI.refresh();
-          if (this.inventoryUI.onInventoryChange)
-            this.inventoryUI.onInventoryChange();
         }
+
+        this.inventoryUI.refresh();
+        if (this.inventoryUI.onInventoryChange)
+          this.inventoryUI.onInventoryChange();
       }
     }
 

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { BLOCK } from "../world/World";
+import { BLOCK } from "../constants/Blocks";
 import { BLOCK_DEFS } from "./BlockTextures";
 
 // 0: Transparent

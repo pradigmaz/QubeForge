@@ -4,6 +4,7 @@ import { World } from "../world/World";
 export class ItemEntity {
   public mesh: THREE.Mesh;
   public type: number;
+  public count: number;
   public isDead = false;
 
   private scene: THREE.Scene;
@@ -25,8 +26,10 @@ export class ItemEntity {
     type: number,
     blockTexture: THREE.DataTexture,
     itemTexture: THREE.CanvasTexture | null = null,
+    count: number = 1,
   ) {
     this.type = type;
+    this.count = count;
     this.scene = scene;
     this.world = world;
     this.timeOffset = Math.random() * 100;
@@ -98,10 +101,10 @@ export class ItemEntity {
         g = 0.2;
         b = 0.0;
       } // Stick (Dark Brown)
-      else if (type === 10 || type === 11) {
+      else if (type === 10 || type === 11 || type === 14) {
         r = 1.0;
         g = 1.0;
-        b = 1.0; // Ores use texture colors
+        b = 1.0; // Ores and Furnace use texture colors
       }
 
       const grassTop = { r: 0.33, g: 0.6, b: 0.33 };
@@ -131,7 +134,7 @@ export class ItemEntity {
       // UV Fix
       const uvAttr = geometry.getAttribute("uv");
       if (uvAttr) {
-        const uvStep = 1.0 / 8.0; // Updated to 8 slots
+        const uvStep = 1.0 / 12.0; // Updated to 12 slots
         const uvInset = 0.001; // Avoid bleeding
 
         // Helper to get ranges
@@ -143,6 +146,9 @@ export class ItemEntity {
         // 5: CT Bottom
         // 6: Coal Ore
         // 7: Iron Ore
+        // 8: Furnace Front
+        // 9: Furnace Side
+        // 10: Furnace Top
 
         const getRange = (idx: number) => {
           return {
@@ -172,6 +178,15 @@ export class ItemEntity {
             texIdx = 6; // Coal Ore
           } else if (type === 11) {
             texIdx = 7; // Iron Ore
+          } else if (type === 14) {
+            // Furnace
+            if (face === 2)
+              texIdx = 10; // Top
+            else if (face === 3)
+              texIdx = 9; // Bottom (use side)
+            else if (face === 4)
+              texIdx = 8; // Front
+            else texIdx = 9; // Side
           }
 
           const { min, max } = getRange(texIdx);

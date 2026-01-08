@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { PerspectiveCamera } from "three";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { ATTACK_RANGE, ATTACK_COOLDOWN } from "../constants/GameConstants";
-import { BLOCK } from "../world/World";
+import { BLOCK } from "../constants/Blocks";
 
 export class PlayerCombat {
   private raycaster: THREE.Raycaster;

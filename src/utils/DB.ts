@@ -13,7 +13,7 @@ export class DB {
 
   async init(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, 2);
+      const request = indexedDB.open(this.dbName, 3);
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
@@ -28,6 +28,9 @@ export class DB {
         }
         if (!db.objectStoreNames.contains("meta")) {
           db.createObjectStore("meta");
+        }
+        if (!db.objectStoreNames.contains("blockEntities")) {
+          db.createObjectStore("blockEntities");
         }
       };
     });

@@ -3,7 +3,7 @@ import { DragDrop } from "./DragDrop";
 import { TOOL_TEXTURES } from "../constants/ToolTextures";
 import { getBlockColor } from "../utils/BlockColors";
 import { BLOCK_NAMES } from "../constants/BlockNames";
-import { BLOCK } from "../world/World";
+import { BLOCK } from "../constants/Blocks";
 
 export class InventoryUI {
   private inventory: Inventory;

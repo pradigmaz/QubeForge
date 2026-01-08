@@ -1,4 +1,4 @@
-import { BLOCK } from "../world/World";
+import { BLOCK } from "../constants/Blocks";
 
 export interface Recipe {
   result: { id: number; count: number };
@@ -81,10 +81,8 @@ export const RECIPES: Recipe[] = [
   },
   // --- RESOURCES ---
   {
-    result: { id: BLOCK.IRON_INGOT, count: 1 },
-    ingredients: [
-      { id: BLOCK.IRON_ORE, count: 1 },
-      { id: BLOCK.COAL, count: 1 },
-    ],
+    result: { id: BLOCK.FURNACE, count: 1 },
+    pattern: ["CCC", "C C", "CCC"],
+    keys: { C: BLOCK.STONE },
   },
 ];

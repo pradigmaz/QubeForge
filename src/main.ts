@@ -1,6 +1,7 @@
 import { Renderer } from "./core/Renderer";
 import { GameState } from "./core/GameState";
-import { World, BLOCK } from "./world/World";
+import { World } from "./world/World";
+import { BLOCK } from "./constants/Blocks";
 import { ItemEntity } from "./entities/ItemEntity";
 import { initToolTextures, TOOL_TEXTURES } from "./constants/ToolTextures";
 import { MobManager } from "./mobs/MobManager";
@@ -10,6 +11,8 @@ import { DragDrop } from "./inventory/DragDrop";
 import { InventoryUI } from "./inventory/InventoryUI";
 import { CraftingSystem } from "./crafting/CraftingSystem";
 import { CraftingUI } from "./crafting/CraftingUI";
+import { FurnaceManager } from "./crafting/FurnaceManager";
+import { FurnaceUI } from "./crafting/FurnaceUI";
 import { Environment } from "./world/Environment";
 import { initDebugControls } from "./utils/DebugUtils";
 import { BlockCursor } from "./blocks/BlockCursor";
@@ -73,6 +76,36 @@ const blockBreaking = new BlockBreaking(
   (x, y, z, id) => {
     // Drop Item Logic
     if (id !== 0) {
+      if (id === BLOCK.FURNACE) {
+        const drops = FurnaceManager.getInstance().removeFurnace(x, y, z);
+        drops.forEach((d) => {
+          let toolTexture = null;
+          if (
+            TOOL_TEXTURES[d.id] &&
+            (d.id >= 20 ||
+              d.id === 8 ||
+              d.id === 12 ||
+              d.id === 13 ||
+              d.id === 14)
+          ) {
+            toolTexture = TOOL_TEXTURES[d.id].texture;
+          }
+          entities.push(
+            new ItemEntity(
+              world,
+              scene,
+              x,
+              y,
+              z,
+              d.id,
+              world.noiseTexture,
+              toolTexture,
+              d.count,
+            ),
+          );
+        });
+      }
+
       const toolId = inventory.getSelectedSlotItem().id;
       let shouldDrop = true;
       let dropId = id;
@@ -95,13 +128,21 @@ const blockBreaking = new BlockBreaking(
         } else {
           dropId = BLOCK.COAL; // Drop Coal item
         }
+      } else if (id === BLOCK.FURNACE) {
+        if (toolId !== BLOCK.WOODEN_PICKAXE && toolId !== BLOCK.STONE_PICKAXE) {
+          shouldDrop = false;
+        }
       }
 
       if (shouldDrop) {
         let toolTexture = null;
         if (
           TOOL_TEXTURES[dropId] &&
-          (dropId >= 20 || dropId === 8 || dropId === 12 || dropId === 13)
+          (dropId >= 20 ||
+            dropId === 8 ||
+            dropId === 12 ||
+            dropId === 13 ||
+            dropId === 14)
         ) {
           toolTexture = TOOL_TEXTURES[dropId].texture;
         }
@@ -161,6 +202,22 @@ const craftingUI = new CraftingUI(
   isMobile,
 );
 
+const furnaceManager = FurnaceManager.getInstance();
+// furnaceManager.load() called later after DB might be more ready, or call it here and hope for the best.
+// The issue is likely that DB init happens in World.loadWorld (which isn't called explicitly here?),
+// or just DB init is async.
+// worldDB.init() is called inside world.loadWorld() but we are not calling world.loadWorld() in main.ts?
+// Ah, `world` is just `new World(scene)`.
+// Let's check `World.ts`.
+
+const furnaceUI = new FurnaceUI(
+  furnaceManager,
+  inventory,
+  inventoryUI,
+  dragDrop,
+  isMobile,
+);
+
 // UI Components
 const hotbarLabelElement = document.getElementById("hotbar-label")!;
 const hotbarLabel = new HotbarLabel(hotbarLabelElement);
@@ -193,6 +250,75 @@ const blockInteraction = new BlockInteraction(
   controls,
   () => inventory.getSelectedSlotItem(),
   (x, y, z, id) => {
+    if (id === BLOCK.FURNACE) {
+      // Calculate rotation based on player yaw
+      // Player rotation.y: 0 is -Z (North), PI/2 is -X (West), PI is +Z (South), -PI/2 is +X (East)
+      // We want block to FACE the player.
+      // If player faces North (0), Block should face South (2).
+      // Standard mapping:
+      // 0: North (-Z), 1: East (+X), 2: South (+Z), 3: West (-X)
+      // Three.js rotation is in radians.
+
+      const rot = controls.object.rotation.y;
+      // Normalize to 0..2PI
+      let angle = rot % (Math.PI * 2);
+      if (angle < 0) angle += Math.PI * 2;
+
+      // 4 quadrants
+      // 0 (North) -> 315-45 deg
+      // 1 (West) -> 45-135 deg
+      // 2 (South) -> 135-225 deg
+      // 3 (East) -> 225-315 deg
+
+      // But we want the block BACK to face the player? Or FRONT?
+      // Usually "facing player" means the front of the block points to player.
+      // So if player looks North, block faces South.
+
+      const segment = Math.floor((angle + Math.PI / 4) / (Math.PI / 2)) % 4;
+      // segment 0: North, 1: West, 2: South, 3: East (ThreeJS coord system is slightly different logic often)
+
+      // Let's map segment to our 0-3:
+      // 0: North (-Z), 1: East (+X), 2: South (+Z), 3: West (-X)
+
+      // Player Look:
+      // 0 (North) -> Oppose: South (2)
+      // 1 (West) -> Oppose: East (1)
+      // 2 (South) -> Oppose: North (0)
+      // 3 (East) -> Oppose: West (3)
+
+      // Map:
+      let blockRot = 0;
+      // segment 0 (North 315-45) -> Face South (2)
+      // segment 1 (West 45-135) -> Face East (1)
+      // segment 2 (South 135-225) -> Face North (0)
+      // segment 3 (East 225-315) -> Face West (3)
+
+      // Wait, in World.ts we used:
+      // Rot 0 (North/-Z): Front texture on "back" face
+      // Rot 1 (East/+X): Front texture on "right" face
+      // Rot 2 (South/+Z): Front texture on "front" face
+      // Rot 3 (West/-X): Front texture on "left" face
+
+      // If we want block Front to face Player:
+      // Player faces North (0) -> Block Front should look South (Rot 2)
+      // Player faces West (1) -> Block Front should look East (Rot 1)
+      // Player faces South (2) -> Block Front should look North (Rot 0)
+      // Player faces East (3) -> Block Front should look West (Rot 3)
+
+      // Correct Mapping based on my World.ts comment assumptions:
+      if (segment === 0) blockRot = 2;
+      else if (segment === 1) blockRot = 1;
+      else if (segment === 2) blockRot = 0;
+      else if (segment === 3) blockRot = 3;
+
+      // Debug log
+      console.log(
+        `Placing Furnace: PlayerRot=${rot.toFixed(2)} Segment=${segment} BlockRot=${blockRot}`,
+      );
+
+      furnaceManager.createFurnace(x, y, z, blockRot);
+    }
+
     world.setBlock(x, y, z, id);
 
     const index = inventory.getSelectedSlot();
@@ -207,6 +333,7 @@ const blockInteraction = new BlockInteraction(
     return true;
   },
   () => toggleInventory(true),
+  (x, y, z) => toggleInventory("furnace", { x, y, z }),
   cursorMesh,
   crackMesh,
   () => mobManager.mobs,
@@ -237,10 +364,14 @@ const game = new Game(
   inventoryUI,
   craftingSystem,
   craftingUI,
+  furnaceUI,
 );
 
 // Toggle Inventory Helper
-function toggleInventory(useCraftingTable = false) {
+function toggleInventory(
+  param: boolean | "furnace" = false,
+  furnacePos?: { x: number; y: number; z: number },
+) {
   if (game.inventoryUI) {
     const inventoryMenu = document.getElementById("inventory-menu")!;
     const crosshair = document.getElementById("crosshair")!;
@@ -249,10 +380,20 @@ function toggleInventory(useCraftingTable = false) {
     dragDrop.setInventoryOpen(!isInventoryOpen);
 
     if (!isInventoryOpen) {
+      const useCraftingTable = param === true;
+      const useFurnace = param === "furnace";
+
       controls.unlock();
       inventoryMenu.style.display = "flex";
       crosshair.style.display = "none";
-      craftingUI.setVisible(true, useCraftingTable);
+
+      if (useFurnace && furnacePos) {
+        furnaceUI.open(furnacePos.x, furnacePos.y, furnacePos.z);
+        craftingUI.setVisible(false, false);
+      } else {
+        furnaceUI.close();
+        craftingUI.setVisible(true, useCraftingTable);
+      }
 
       if (isMobile) {
         const mobUi = document.getElementById("mobile-ui");
@@ -279,6 +420,7 @@ function toggleInventory(useCraftingTable = false) {
         position: controls.object.position,
         inventory: inventory.serialize(),
       });
+      FurnaceManager.getInstance().save();
 
       // Return items
       craftingSystem.consumeIngredients();
@@ -295,6 +437,7 @@ function toggleInventory(useCraftingTable = false) {
       craftingSystem.craftingResult.id = 0;
       craftingSystem.craftingResult.count = 0;
       craftingUI.setVisible(false, false);
+      furnaceUI.close();
 
       if (isMobile) {
         const mobUi = document.getElementById("mobile-ui");
@@ -514,6 +657,7 @@ setInterval(() => {
       position: controls.object.position,
       inventory: inventory.serialize(),
     });
+    FurnaceManager.getInstance().save();
   }
 }, 30000);
 
@@ -525,6 +669,19 @@ const bgVideo = document.getElementById("bg-video") as HTMLVideoElement;
 let loadProgress = 0;
 const startTime = performance.now();
 const MIN_LOAD_TIME = 2000; // Minimum visibility time in ms
+
+// Init World Data
+world.loadWorld().then(async (data) => {
+  if (data.playerPosition) {
+    controls.object.position.copy(data.playerPosition);
+  }
+  if (data.inventory) {
+    inventory.deserialize(data.inventory);
+    inventoryUI.refresh();
+  }
+  // Load Furnaces
+  await FurnaceManager.getInstance().load();
+});
 
 // Force check for video ready state if event missed
 const checkVideoReady = () => {
