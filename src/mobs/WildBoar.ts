@@ -6,7 +6,7 @@ import { ItemEntity } from "../entities/ItemEntity";
 
 export class WildBoar extends Mob {
   protected readonly walkSpeed: number = 1.5;
-  protected readonly runSpeed: number = 4.5;
+  protected readonly runSpeed: number = 4.5; // Player walk speed (~4.0-4.5 blocks/sec)
   protected readonly detectionRadius: number = 8.0;
   
   // Body Parts
@@ -269,11 +269,8 @@ export class WildBoar extends Mob {
                  this.mesh.rotation.y += angleDiff * delta * 5;
             }
 
-            if (distToPlayer < 4.0) {
-                // Too close! Flee!
-                this.state = MobState.FLEE;
-                this.fleeTimer = 5.0;
-            } else if (this.alertTimer <= 0) {
+            // Removed distance-based fleeing. Only flee on damage.
+            if (this.alertTimer <= 0) {
                 // False alarm or player stayed away
                 this.state = MobState.IDLE;
             }
@@ -288,10 +285,8 @@ export class WildBoar extends Mob {
                 const dz = this.mesh.position.z - playerPos.z;
                 const angle = Math.atan2(dx, dz);
                 
-                // Add some jitter/randomness to look frantic
-                const jitter = Math.sin(time * 10) * 0.5; 
-                
-                this.mesh.rotation.y = angle + jitter;
+                // Run straight away (no jitter)
+                this.mesh.rotation.y = angle;
                 this.velocity.x = Math.sin(this.mesh.rotation.y) * this.runSpeed;
                 this.velocity.z = Math.cos(this.mesh.rotation.y) * this.runSpeed;
             }
