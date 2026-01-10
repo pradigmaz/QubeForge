@@ -19,6 +19,8 @@ export class MobileControls {
   private lastLookX: number = 0;
   private lastLookY: number = 0;
 
+  private placeTouchId: number | null = null;
+
   constructor(game: Game) {
     this.game = game;
     this.joystickZone = document.getElementById("joystick-zone")!;
@@ -225,15 +227,46 @@ export class MobileControls {
     btnAttack.addEventListener("touchend", endAttack);
     btnAttack.addEventListener("touchcancel", endAttack);
 
-    document
-      .getElementById("btn-place")!
-      .addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        // Access blockInteraction via game property if needed,
-        // but main.ts was calling performInteract() wrapper.
-        // Game class has blockInteraction public.
-        this.game.blockInteraction.interact(this.game.world);
-      });
+    const btnPlace = document.getElementById("btn-place")!;
+    btnPlace.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      if (this.game.gameState.getPaused()) return;
+
+      if (this.placeTouchId !== null) return;
+
+      const touch = e.changedTouches[0];
+      this.placeTouchId = touch.identifier;
+
+      this.game.isUsePressed = true;
+      // Interact immediately (for placing blocks / opening inventories)
+      this.game.blockInteraction.interact(this.game.world);
+    });
+
+    const endPlace = (e: TouchEvent) => {
+      e.preventDefault();
+      if (this.placeTouchId === null) return;
+
+      let touchFound = false;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === this.placeTouchId) {
+          touchFound = true;
+          break;
+        }
+      }
+
+      if (touchFound) {
+        this.game.isUsePressed = false;
+        this.placeTouchId = null;
+      }
+    };
+
+    btnPlace.addEventListener("touchend", endPlace);
+    btnPlace.addEventListener("touchcancel", endPlace);
+    btnPlace.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    });
 
     // Inventory button needs access to toggleInventory from main/Game.
     // Ideally Game should have toggleInventory method or similar.
