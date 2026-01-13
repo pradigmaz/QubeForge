@@ -9,6 +9,9 @@ export class Environment {
   private moon: THREE.Mesh;
   private clouds: THREE.InstancedMesh; 
   private cloudData: { x: number, y: number, z: number, scaleX: number, scaleZ: number }[] = [];
+  
+  // Reusable object for cloud matrix updates (avoid GC)
+  private cloudDummy: THREE.Object3D = new THREE.Object3D();
 
   // Cycle Configuration
   private time: number = 0; // Current time in seconds
@@ -191,7 +194,7 @@ export class Environment {
     this.ambientLight.intensity = THREE.MathUtils.lerp(this.ambientLight.intensity, ambientIntensity, lerpFactor);
 
     // --- Clouds ---
-    const dummy = new THREE.Object3D();
+    const dummy = this.cloudDummy;
     const range = 200; // Radius around player
     const cloudSpeed = 2;
     

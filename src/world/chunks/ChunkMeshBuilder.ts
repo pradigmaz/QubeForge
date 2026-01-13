@@ -9,6 +9,12 @@ export class ChunkMeshBuilder {
   
   // Shared material для всех чанков (экономия памяти)
   private static sharedMaterial: THREE.MeshStandardMaterial | null = null;
+  
+  // Object pooling для массивов (уменьшает GC паузы)
+  private positionsPool: number[] = [];
+  private normalsPool: number[] = [];
+  private uvsPool: number[] = [];
+  private colorsPool: number[] = [];
 
   constructor() {
     this.noiseTexture = TextureAtlas.createNoiseTexture();
@@ -40,10 +46,16 @@ export class ChunkMeshBuilder {
     _getBlockIndex: (x: number, y: number, z: number) => number,
     getNeighborBlock: (x: number, y: number, z: number) => number,
   ): THREE.Mesh {
-    const positions: number[] = [];
-    const normals: number[] = [];
-    const uvs: number[] = [];
-    const colors: number[] = [];
+    // Переиспользуем массивы из пула (очищаем вместо создания новых)
+    this.positionsPool.length = 0;
+    this.normalsPool.length = 0;
+    this.uvsPool.length = 0;
+    this.colorsPool.length = 0;
+    
+    const positions = this.positionsPool;
+    const normals = this.normalsPool;
+    const uvs = this.uvsPool;
+    const colors = this.colorsPool;
 
     const startX = cx * chunkSize;
     const startZ = cz * chunkSize;

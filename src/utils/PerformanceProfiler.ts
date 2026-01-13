@@ -8,7 +8,7 @@ export class PerformanceProfiler {
   private maxFrameTimings: number = 120; // 2 секунды при 60 FPS
   
   private lastFrameTime: number = performance.now();
-  private freezeThreshold: number = 16.67; // >16.67ms = <60 FPS
+  private freezeThreshold: number = 33.33; // >33.33ms = <30 FPS (realistic for voxel game)
   private freezeCount: number = 0;
   
   private container: HTMLDivElement | null = null;

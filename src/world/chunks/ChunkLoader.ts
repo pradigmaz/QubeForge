@@ -232,19 +232,48 @@ export class ChunkLoader {
   }
 
   /**
-   * Дождаться загрузки чанка
+   * Дождаться загрузки чанка (с синхронной генерацией если нужно)
    */
   public async waitForChunk(cx: number, cz: number): Promise<void> {
     const key = `${cx},${cz}`;
     if (this.dataManager.hasChunkData(key)) return;
 
+    // Попробовать загрузить из persistence
+    const savedData = await this.persistence.loadChunk(key);
+    if (savedData) {
+      this.dataManager.setChunkData(key, savedData, false);
+      this.meshManager.buildMesh(
+        cx,
+        cz,
+        savedData,
+        this.getBlockIndex.bind(this),
+        this.getBlock.bind(this),
+      );
+      return;
+    }
+
+    // Синхронная генерация (для спавна игрока)
+    this.generationQueue.enqueue(cx, cz, 0);
+    
+    // Принудительно обработать очередь
     return new Promise((resolve) => {
       const check = () => {
+        this.generationQueue.process((genCx, genCz, data) => {
+          const genKey = `${genCx},${genCz}`;
+          this.dataManager.setChunkData(genKey, data, true);
+          this.meshManager.buildMesh(
+            genCx,
+            genCz,
+            data,
+            this.getBlockIndex.bind(this),
+            this.getBlock.bind(this),
+          );
+        });
+        
         if (this.dataManager.hasChunkData(key)) {
           resolve();
         } else {
-          this.ensureChunk(cx, cz);
-          setTimeout(check, 100);
+          setTimeout(check, 50);
         }
       };
       check();

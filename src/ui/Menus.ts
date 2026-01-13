@@ -314,10 +314,10 @@ export class Menus {
         const spawnX = 8;
         const spawnZ = 20;
 
-        // Ensure chunk is generated so we know about trees
+        // Ensure chunk is fully generated before getting topY
         const cx = Math.floor(spawnX / 32);
         const cz = Math.floor(spawnZ / 32);
-        await this.game.world.loadChunk(cx, cz);
+        await this.game.world.waitForChunk(cx, cz);
 
         const topY = this.game.world.getTopY(spawnX, spawnZ);
 
