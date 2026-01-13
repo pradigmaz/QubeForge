@@ -68,7 +68,7 @@ export class ChunkMeshManager {
     if (chunk) {
       this.scene.remove(chunk.mesh);
       chunk.mesh.geometry.dispose();
-      (chunk.mesh.material as THREE.Material).dispose();
+      // НЕ dispose материал - он shared между всеми чанками!
       this.chunks.delete(key);
     }
 
@@ -85,7 +85,7 @@ export class ChunkMeshManager {
     if (chunk) {
       this.scene.remove(chunk.mesh);
       chunk.mesh.geometry.dispose();
-      (chunk.mesh.material as THREE.Material).dispose();
+      // НЕ dispose материал - он shared между всеми чанками!
       this.chunks.delete(key);
     }
   }
@@ -128,7 +128,7 @@ export class ChunkMeshManager {
     for (const [, chunk] of this.chunks) {
       this.scene.remove(chunk.mesh);
       chunk.mesh.geometry.dispose();
-      (chunk.mesh.material as THREE.Material).dispose();
+      // НЕ dispose материал - он shared между всеми чанками!
     }
     this.chunks.clear();
   }
