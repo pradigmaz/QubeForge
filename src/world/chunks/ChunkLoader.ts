@@ -83,7 +83,6 @@ export class ChunkLoader {
 
   public setSeed(seed: number): void {
     this.terrainGen.setSeed(seed);
-    this.generationQueue.setSeed(seed);
   }
 
   public getNoiseTexture(): THREE.DataTexture {

@@ -175,50 +175,6 @@ export class Menus {
     });
   }
 
-<<<<<<< HEAD
-    this.btnNewGame.innerText = "Загрузка...";
-    this.btnContinue.innerText = "Загрузка...";
-
-    try {
-      if (!loadSave) {
-        await this.game.world.deleteWorld();
-        this.game.player.health.respawn();
-
-        // Calculate spawn position on ground
-        const spawnX = 8;
-        const spawnZ = 20;
-
-        // Ensure chunk is fully generated before getting topY
-        const cx = Math.floor(spawnX / 32);
-        const cz = Math.floor(spawnZ / 32);
-        await this.game.world.waitForChunk(cx, cz);
-
-        const topY = this.game.world.getTopY(spawnX, spawnZ);
-
-        // +3 to stand on top and avoid head stuck in leaves
-        // +0.5 to center on the block and avoid clipping neighbors
-        this.game.renderer.controls.object.position.set(
-          spawnX + 0.5,
-          topY + 3,
-          spawnZ + 0.5,
-        );
-
-        this.game.inventory.clear();
-        this.game.inventoryUI.refresh();
-      } else {
-        const data = await this.game.world.loadWorld();
-        if (data.playerPosition) {
-          // Add small offset to Y to prevent getting stuck in blocks
-          const safePos = data.playerPosition.clone();
-          safePos.y += 0.1;
-          this.game.renderer.controls.object.position.copy(safePos);
-          this.game.player.physics.setVelocity({ x: 0, y: 0, z: 0 } as any); // Reset velocity
-        }
-        if (data.inventory) {
-          this.game.inventory.deserialize(data.inventory);
-          this.game.inventoryUI.refresh();
-        }
-=======
   public showWorldSelection(): void {
     this.elements.mainMenu.style.display = "none";
     
@@ -226,7 +182,6 @@ export class Menus {
       (worldId) => this.gameLauncher.launch(worldId),
       () => {
         this.elements.mainMenu.style.display = "flex";
->>>>>>> 3a48882 (feat: Система сохранения миров, звуковая система, рефакторинг меню)
       }
     );
   }
