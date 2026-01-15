@@ -6,9 +6,31 @@ import { BlockColors } from "../../constants/BlockColors";
 
 export class ChunkMeshBuilder {
   private noiseTexture: THREE.DataTexture;
+  
+  // Shared material для всех чанков (экономия памяти)
+  private static sharedMaterial: THREE.MeshStandardMaterial | null = null;
+  
+  // Object pooling для массивов (уменьшает GC паузы)
+  private positionsPool: number[] = [];
+  private normalsPool: number[] = [];
+  private uvsPool: number[] = [];
+  private colorsPool: number[] = [];
 
   constructor() {
     this.noiseTexture = TextureAtlas.createNoiseTexture();
+    
+    // Создать shared material один раз
+    if (!ChunkMeshBuilder.sharedMaterial) {
+      ChunkMeshBuilder.sharedMaterial = new THREE.MeshStandardMaterial({
+        map: this.noiseTexture,
+        vertexColors: true,
+        roughness: 0.8,
+        alphaTest: 0.5,
+        transparent: true,
+        depthWrite: true,
+        side: THREE.DoubleSide,
+      });
+    }
   }
 
   public getNoiseTexture(): THREE.DataTexture {
@@ -24,10 +46,16 @@ export class ChunkMeshBuilder {
     _getBlockIndex: (x: number, y: number, z: number) => number,
     getNeighborBlock: (x: number, y: number, z: number) => number,
   ): THREE.Mesh {
-    const positions: number[] = [];
-    const normals: number[] = [];
-    const uvs: number[] = [];
-    const colors: number[] = [];
+    // Переиспользуем массивы из пула (очищаем вместо создания новых)
+    this.positionsPool.length = 0;
+    this.normalsPool.length = 0;
+    this.uvsPool.length = 0;
+    this.colorsPool.length = 0;
+    
+    const positions = this.positionsPool;
+    const normals = this.normalsPool;
+    const uvs = this.uvsPool;
+    const colors = this.colorsPool;
 
     const startX = cx * chunkSize;
     const startZ = cz * chunkSize;
@@ -75,23 +103,46 @@ export class ChunkMeshBuilder {
           const worldX = startX + x;
           const worldZ = startZ + z;
 
-          // Check neighbors and add faces
-          if (this.isTransparent(getNeighborBlock(worldX, y + 1, worldZ))) {
+          // Кэшируем соседей для occlusion culling
+          const neighborTop = getNeighborBlock(worldX, y + 1, worldZ);
+          const neighborBottom = getNeighborBlock(worldX, y - 1, worldZ);
+          const neighborFront = getNeighborBlock(worldX, y, worldZ + 1);
+          const neighborBack = getNeighborBlock(worldX, y, worldZ - 1);
+          const neighborRight = getNeighborBlock(worldX + 1, y, worldZ);
+          const neighborLeft = getNeighborBlock(worldX - 1, y, worldZ);
+
+          // Occlusion culling: пропустить полностью закрытые блоки
+          const topTransparent = this.isTransparent(neighborTop);
+          const bottomTransparent = this.isTransparent(neighborBottom);
+          const frontTransparent = this.isTransparent(neighborFront);
+          const backTransparent = this.isTransparent(neighborBack);
+          const rightTransparent = this.isTransparent(neighborRight);
+          const leftTransparent = this.isTransparent(neighborLeft);
+
+          // Если все соседи непрозрачны - блок полностью закрыт, пропускаем
+          if (!topTransparent && !bottomTransparent && 
+              !frontTransparent && !backTransparent && 
+              !rightTransparent && !leftTransparent) {
+            continue;
+          }
+
+          // Добавляем только видимые грани
+          if (topTransparent) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "top", startX, startZ);
           }
-          if (this.isTransparent(getNeighborBlock(worldX, y - 1, worldZ))) {
+          if (bottomTransparent) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "bottom", startX, startZ);
           }
-          if (this.isTransparent(getNeighborBlock(worldX, y, worldZ + 1))) {
+          if (frontTransparent) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "front", startX, startZ);
           }
-          if (this.isTransparent(getNeighborBlock(worldX, y, worldZ - 1))) {
+          if (backTransparent) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "back", startX, startZ);
           }
-          if (this.isTransparent(getNeighborBlock(worldX + 1, y, worldZ))) {
+          if (rightTransparent) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "right", startX, startZ);
           }
-          if (this.isTransparent(getNeighborBlock(worldX - 1, y, worldZ))) {
+          if (leftTransparent) {
             this.addFace(positions, normals, uvs, colors, x, y, z, type, "left", startX, startZ);
           }
         }
@@ -227,15 +278,8 @@ export class ChunkMeshBuilder {
     geometry.setIndex(indices);
     geometry.computeBoundingSphere();
 
-    const material = new THREE.MeshStandardMaterial({
-      map: this.noiseTexture,
-      vertexColors: true,
-      roughness: 0.8,
-      alphaTest: 0.5,
-      transparent: true,
-    });
-
-    const mesh = new THREE.Mesh(geometry, material);
+    // Используем shared material для всех чанков
+    const mesh = new THREE.Mesh(geometry, ChunkMeshBuilder.sharedMaterial!);
     mesh.position.set(startX, 0, startZ);
     mesh.castShadow = true;
     mesh.receiveShadow = true;

@@ -22,6 +22,11 @@ export class ChunkLoader {
   private generationQueue: ChunkGenerationQueue;
   private dataManager: ChunkDataManager;
   private meshManager: ChunkMeshManager;
+  
+  // Batch block updates: накапливаем изменения и применяем раз в N кадров
+  private pendingMeshRebuilds: Set<string> = new Set();
+  private rebuildCounter: number = 0;
+  private readonly REBUILD_INTERVAL: number = 2; // Каждые 2 кадра
 
   constructor(
     scene: THREE.Scene,
@@ -63,6 +68,7 @@ export class ChunkLoader {
 
   public setSeed(seed: number): void {
     this.terrainGen.setSeed(seed);
+    this.generationQueue.setSeed(seed);
   }
 
   public getNoiseTexture(): THREE.DataTexture {
@@ -113,6 +119,36 @@ export class ChunkLoader {
         this.getBlock.bind(this),
       );
     });
+    
+    // Batch rebuild: обработать накопленные изменения
+    this.rebuildCounter++;
+    if (this.rebuildCounter >= this.REBUILD_INTERVAL && this.pendingMeshRebuilds.size > 0) {
+      this.rebuildCounter = 0;
+      this.processPendingRebuilds();
+    }
+  }
+  
+  /**
+   * Обработать накопленные перестройки мешей
+   */
+  private processPendingRebuilds(): void {
+    for (const key of this.pendingMeshRebuilds) {
+      const [cxStr, czStr] = key.split(',');
+      const cx = parseInt(cxStr, 10);
+      const cz = parseInt(czStr, 10);
+      
+      const data = this.dataManager.getChunkData(key);
+      if (data) {
+        this.meshManager.rebuildMesh(
+          cx,
+          cz,
+          data,
+          this.getBlockIndex.bind(this),
+          this.getBlock.bind(this),
+        );
+      }
+    }
+    this.pendingMeshRebuilds.clear();
   }
 
   /**
@@ -153,6 +189,7 @@ export class ChunkLoader {
 
   /**
    * Установить блок по мировым координатам
+   * Использует batch updates для уменьшения перестроек мешей
    */
   public setBlock(x: number, y: number, z: number, type: number): void {
     this.dataManager.setBlock(x, y, z, type);
@@ -160,17 +197,17 @@ export class ChunkLoader {
     const cx = Math.floor(x / this.chunkSize);
     const cz = Math.floor(z / this.chunkSize);
 
-    // Rebuild meshes
-    this.rebuildChunkMesh(cx, cz);
+    // Добавить в очередь перестройки (batch)
+    this.pendingMeshRebuilds.add(`${cx},${cz}`);
 
-    // Rebuild neighbors if on border
+    // Добавить соседние чанки если блок на границе
     const localX = x - cx * this.chunkSize;
     const localZ = z - cz * this.chunkSize;
 
-    if (localX === 0) this.rebuildChunkMesh(cx - 1, cz);
-    if (localX === this.chunkSize - 1) this.rebuildChunkMesh(cx + 1, cz);
-    if (localZ === 0) this.rebuildChunkMesh(cx, cz - 1);
-    if (localZ === this.chunkSize - 1) this.rebuildChunkMesh(cx, cz + 1);
+    if (localX === 0) this.pendingMeshRebuilds.add(`${cx - 1},${cz}`);
+    if (localX === this.chunkSize - 1) this.pendingMeshRebuilds.add(`${cx + 1},${cz}`);
+    if (localZ === 0) this.pendingMeshRebuilds.add(`${cx},${cz - 1}`);
+    if (localZ === this.chunkSize - 1) this.pendingMeshRebuilds.add(`${cx},${cz + 1}`);
   }
 
   /**
@@ -195,19 +232,48 @@ export class ChunkLoader {
   }
 
   /**
-   * Дождаться загрузки чанка
+   * Дождаться загрузки чанка (с синхронной генерацией если нужно)
    */
   public async waitForChunk(cx: number, cz: number): Promise<void> {
     const key = `${cx},${cz}`;
     if (this.dataManager.hasChunkData(key)) return;
 
+    // Попробовать загрузить из persistence
+    const savedData = await this.persistence.loadChunk(key);
+    if (savedData) {
+      this.dataManager.setChunkData(key, savedData, false);
+      this.meshManager.buildMesh(
+        cx,
+        cz,
+        savedData,
+        this.getBlockIndex.bind(this),
+        this.getBlock.bind(this),
+      );
+      return;
+    }
+
+    // Синхронная генерация (для спавна игрока)
+    this.generationQueue.enqueue(cx, cz, 0);
+    
+    // Принудительно обработать очередь
     return new Promise((resolve) => {
       const check = () => {
+        this.generationQueue.process((genCx, genCz, data) => {
+          const genKey = `${genCx},${genCz}`;
+          this.dataManager.setChunkData(genKey, data, true);
+          this.meshManager.buildMesh(
+            genCx,
+            genCz,
+            data,
+            this.getBlockIndex.bind(this),
+            this.getBlock.bind(this),
+          );
+        });
+        
         if (this.dataManager.hasChunkData(key)) {
           resolve();
         } else {
-          this.ensureChunk(cx, cz);
-          setTimeout(check, 100);
+          setTimeout(check, 50);
         }
       };
       check();

@@ -13,6 +13,11 @@ export class BlockBreaking {
   private scene: Scene;
   private controls: PointerLockControls;
   private cursorMesh?: THREE.Mesh;
+  
+  // Raycast кэширование
+  private chunkMeshes: THREE.Object3D[] = [];
+  private lastCacheUpdate: number = 0;
+  private readonly CACHE_UPDATE_INTERVAL: number = 500; // ms
 
   private isBreaking: boolean = false;
   private breakStartTime: number = 0;
@@ -108,19 +113,31 @@ export class BlockBreaking {
     return this.isBreaking;
   }
 
+  /**
+   * Обновить кэш chunk meshes для raycast
+   */
+  private updateChunkMeshCache(): void {
+    const now = performance.now();
+    if (now - this.lastCacheUpdate < this.CACHE_UPDATE_INTERVAL) return;
+    
+    this.lastCacheUpdate = now;
+    this.chunkMeshes = this.scene.children.filter(
+      (obj) =>
+        obj !== this.cursorMesh &&
+        obj !== this.crackMesh &&
+        obj !== this.controls.object &&
+        (obj as any).isMesh &&
+        !(obj as any).isItem &&
+        !(obj.parent as any)?.isMob
+    );
+  }
+
   public start(world: World): void {
+    this.updateChunkMeshCache();
     this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
     const hit = this.raycaster
-      .intersectObjects(this.scene.children)
-      .find(
-        (i) =>
-          i.object !== this.cursorMesh &&
-          i.object !== this.crackMesh &&
-          i.object !== this.controls.object &&
-          (i.object as any).isMesh &&
-          !(i.object as any).isItem &&
-          !(i.object.parent as any)?.isMob,
-      );
+      .intersectObjects(this.chunkMeshes)
+      .find((i) => i.distance < 6);
 
     if (hit && hit.distance < 6) {
       const p = hit.point
@@ -152,18 +169,11 @@ export class BlockBreaking {
     }
 
     // Check if still looking at same block
+    this.updateChunkMeshCache();
     this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
     const hit = this.raycaster
-      .intersectObjects(this.scene.children)
-      .find(
-        (i) =>
-          i.object !== this.cursorMesh &&
-          i.object !== this.crackMesh &&
-          i.object !== this.controls.object &&
-          (i.object as any).isMesh &&
-          !(i.object as any).isItem &&
-          !(i.object.parent as any)?.isMob,
-      );
+      .intersectObjects(this.chunkMeshes)
+      .find((i) => i.distance < 6);
 
     let lookingAtSame = false;
     if (hit && hit.distance < 6) {

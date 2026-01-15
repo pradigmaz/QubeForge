@@ -23,6 +23,14 @@ export class ChunkManager {
 
   private loader: ChunkLoader;
   private visibility: ChunkVisibility;
+  
+  // Throttling: обновлять чанки не каждый кадр
+  private updateCounter: number = 0;
+  private readonly UPDATE_INTERVAL: number = 3; // Каждые 3 кадра
+  
+  // Кэш позиции игрока для определения движения
+  private lastPlayerChunkX: number = -Infinity;
+  private lastPlayerChunkZ: number = -Infinity;
 
   constructor(scene: THREE.Scene, seed?: number) {
     this.loader = new ChunkLoader(scene, this.chunkSize, this.chunkHeight, seed);
@@ -51,15 +59,28 @@ export class ChunkManager {
   public update(playerPos: THREE.Vector3): void {
     const profiler = window.__profiler;
     
+    const cx = Math.floor(playerPos.x / this.chunkSize);
+    const cz = Math.floor(playerPos.z / this.chunkSize);
+    
+    // Throttling: полное обновление только каждые N кадров
+    // или если игрок перешёл в новый чанк
+    const playerMovedChunk = cx !== this.lastPlayerChunkX || cz !== this.lastPlayerChunkZ;
+    this.updateCounter++;
+    
+    const shouldFullUpdate = playerMovedChunk || this.updateCounter >= this.UPDATE_INTERVAL;
+    
+    if (shouldFullUpdate) {
+      this.updateCounter = 0;
+      this.lastPlayerChunkX = cx;
+      this.lastPlayerChunkZ = cz;
+    }
+    
     const isMobile =
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
         navigator.userAgent,
       ) ||
       (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
     const radius = isMobile ? 2 : 3;
-
-    const cx = Math.floor(playerPos.x / this.chunkSize);
-    const cz = Math.floor(playerPos.z / this.chunkSize);
 
     const activeChunks = new Set<string>();
 
@@ -84,23 +105,26 @@ export class ChunkManager {
     this.loader.processGenerationQueue();
     profiler?.endMeasure('chunk-generation');
 
-    // Выгрузить дальние чанки
-    profiler?.startMeasure('chunk-unload');
-    for (const [key] of this.loader.getChunks()) {
-      if (!activeChunks.has(key)) {
-        this.loader.unloadChunk(key);
-        this.visibility.clearBounds(key);
+    // Выгрузка и сортировка только при полном обновлении
+    if (shouldFullUpdate) {
+      // Выгрузить дальние чанки
+      profiler?.startMeasure('chunk-unload');
+      for (const [key] of this.loader.getChunks()) {
+        if (!activeChunks.has(key)) {
+          this.loader.unloadChunk(key);
+          this.visibility.clearBounds(key);
+        }
       }
+      profiler?.endMeasure('chunk-unload');
+
+      // Обновить сортировку чанков для early-z optimization
+      profiler?.startMeasure('chunk-sorting');
+      this.loader.updateChunkSorting(playerPos);
+      profiler?.endMeasure('chunk-sorting');
     }
-    profiler?.endMeasure('chunk-unload');
 
-    // Обновить сортировку чанков для early-z optimization
-    profiler?.startMeasure('chunk-sorting');
-    this.loader.updateChunkSorting(playerPos);
-    profiler?.endMeasure('chunk-sorting');
-
-    // Memory cleanup
-    if (Math.random() < (isMobile ? 0.05 : 0.01)) {
+    // Memory cleanup (реже)
+    if (Math.random() < (isMobile ? 0.02 : 0.005)) {
       this.checkMemory(playerPos);
     }
   }
